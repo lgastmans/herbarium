@@ -22,7 +22,7 @@ use LivewireUI\Modal\ModalComponent;
 final class GenusTable extends PowerGridComponent
 {
 
-    public string $sortField = 'name'; 
+    public string $sortField = 'genus_name'; 
     public string $sortDirection = 'asc';
 
     public function setUp(): array
@@ -42,7 +42,8 @@ final class GenusTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        return Genus::query();
+        return Genus::query()
+            ->select('id', 'name as genus_name');
     }
 
     public function header(): array
@@ -59,21 +60,20 @@ final class GenusTable extends PowerGridComponent
     {
         return PowerGrid::fields()
             ->add('id')
-            ->add('name')
-            ->add('name_lower', fn (Genus $model) => strtolower(e($model->name)))
-            ->add('created_at')
-            ->add('created_at_formatted', fn (Genus $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
+            ->add('genus_name');
+            // ->add('name_lower', fn (Genus $model) => strtolower(e($model->name)))
+            // ->add('created_at')
+            // ->add('created_at_formatted', fn (Genus $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
     }
 
     public function columns(): array
     {
         return [
-            Column::make('ID', 'id')
+            Column::make('Id', 'id')
                 ->searchable()
-                ->sortable()
                 ->hidden(),
 
-            Column::make('Name', 'name')
+            Column::make('Name', 'genus_name', 'genus.name')
                 ->searchable()
                 ->sortable(),
                 // ->editOnClick(
@@ -82,37 +82,36 @@ final class GenusTable extends PowerGridComponent
                 //     saveOnMouseOut: true
                 // ),
 
-            Column::make('Created at', 'created_at')
-                ->hidden(),
-
-            Column::make('Created at', 'created_at_formatted', 'created_at')
-                ->searchable()
-                ->hidden(),
+            // Column::make('Created at', 'created_at')
+            //     ->hidden(),
 
             Column::action('Action')
         ];
     }
 
+    
     public function onUpdatedEditable(string|int $id, string $field, string $value): void
     {
         Genus::query()->find($id)->update([
             $field => e($value),
         ]);
     }
+    
 
     public function filters(): array
     {
         return [
-            Filter::inputText('name'),
-            Filter::datepicker('created_at_formatted', 'created_at'),
+            Filter::inputText('genus_name', 'genus.name'),
         ];
     }
 
+    
     #[\Livewire\Attributes\On('edit')]
     public function edit($rowId): void
     {
         $this->js('alert('.$rowId.')');
     }
+    
 
     public function actions(Genus $row): array
     {
