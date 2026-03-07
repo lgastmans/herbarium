@@ -1,11 +1,11 @@
 /.phpunit.cache
 /node_modules
-/public/build
 /public/hot
 /public/storage
 /public/Images
 /storage/*.key
 /storage/logs/*
+/storage/import/
 /bootstrap/cache/*
 /vendor
 

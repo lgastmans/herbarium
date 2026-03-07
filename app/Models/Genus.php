@@ -19,7 +19,7 @@ class Genus extends Model
      *  SQLSTATE[42S02]: Base table or view not found: 1146 Table 'avherbarium.genera' doesn't exist (Connection: mysql, SQL: insert into 
      *    `genera` (`genus`, `updated_at`, `created_at`) values (Ipomoea obscura (L.) Ker Gawler, 2024-05-15 03:58:26, 2024-05-15 03:58:26))
      *
-     *  maybe because the column name is the same as the table name?
+     *  maybe because the class name is the same as the table name?
      */
     protected $table = 'genus';
 
