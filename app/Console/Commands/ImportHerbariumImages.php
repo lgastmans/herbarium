@@ -20,6 +20,13 @@ class ImportHerbariumImages extends Command
             return 1;
         }
 
+        $logFile = storage_path('logs/herbarium-import-' . now()->format('Y-m-d_H-i-s') . '.log');
+
+        file_put_contents($logFile, "Herbarium Image Import\n");
+        file_put_contents($logFile, "Started: " . now() . "\n\n", FILE_APPEND);
+
+        $this->info("Import report: {$logFile}");
+
         // Build lookup table of normalized collection numbers
         $herbaria = Herbarium::all();
         $lookup = [];
@@ -34,7 +41,10 @@ class ImportHerbariumImages extends Command
         foreach ($files as $file) {
 
             if (!preg_match('/^([A-Z]\s\d+|\d+)(?:_\d+)?\.(jpg|jpeg|png)$/i', $file, $matches)) {
-                $this->error("Invalid filename format: {$file}");
+                $message = "Invalid filename format: {$file}";
+                $this->error($message);
+                $this->logMessage($logFile, $message);
+
                 continue;
             }
 
@@ -42,7 +52,10 @@ class ImportHerbariumImages extends Command
             $normalizedFileValue = $this->normalize($rawCollection);
 
             if (!isset($lookup[$normalizedFileValue])) {
-                $this->warn("No match for: {$file}");
+                $message = "No match for: {$file}";
+                $this->warn($message);
+                $this->logMessage($logFile, $message);                
+
                 continue;
             }
 
@@ -52,7 +65,11 @@ class ImportHerbariumImages extends Command
             if (HerbariumImages::where('herbarium_id', $herbarium->id)
                 ->where('filename', $file)
                 ->exists()) {
-                $this->line("Already imported: {$file}");
+
+                $message = "Already imported: {$file}";
+                $this->info($message);
+                $this->logMessage($logFile, $message);
+
                 continue;
             }
 
@@ -66,11 +83,26 @@ class ImportHerbariumImages extends Command
                 'filename'     => $file,
             ]);
 
-            $this->info("Imported: {$file}");
+            $message = "Imported: {$file}";
+            $this->info($message);
+            $this->logMessage($logFile, $message);
+
         }
 
+        $this->logMessage($logFile, "");
+        $this->logMessage($logFile, "Import completed: " . now());
+
+        $this->info("Report saved to:");
+        $this->line($logFile);
+
         $this->info("Import complete.");
+
         return 0;
+    }
+
+    private function logMessage($file, $message)
+    {
+        file_put_contents($file, $message . PHP_EOL, FILE_APPEND);
     }
 
     private function normalize($value)
