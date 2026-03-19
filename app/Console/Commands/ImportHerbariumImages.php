@@ -64,14 +64,10 @@ class ImportHerbariumImages extends Command
             } else {
                 // Try fallback: prepend "F "
                 $fallbackValue = 'F ' . $rawCollection;
-                $this->info($fallbackValue);
                 $normalizedFallback = $this->normalize($fallbackValue);
-                $this->info($normalizedFallback);
 
                 if (isset($lookup[$normalizedFallback])) {
-                    $this->info('set');
                     $herbarium = $lookup[$normalizedFallback];
-                    $this->info($herbarium);
                     $updated = true;
                 }
             }
