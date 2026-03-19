@@ -24,6 +24,8 @@ class ImportHerbariumImages extends Command
 
         file_put_contents($logFile, "Herbarium Image Import\n");
         file_put_contents($logFile, "Started: " . now() . "\n\n", FILE_APPEND);
+        
+        $this->logMessage($logFile, "Import folder ".$sourcePath);
 
         $this->info("Import report: {$logFile}");
 
