@@ -40,6 +40,8 @@ class ImportHerbariumImages extends Command
 
         $files = scandir($sourcePath);
 
+        $imported = 0;
+
         foreach ($files as $file) {
 
             if (!preg_match('/^([A-Z]\s\d+|\d+)(?:_\d+)?\.(jpg|jpeg|png)$/i', $file, $matches)) {
@@ -85,13 +87,16 @@ class ImportHerbariumImages extends Command
                 'filename'     => $file,
             ]);
 
-            $message = "Imported: {$file}";
-            $this->info($message);
-            $this->logMessage($logFile, $message);
+            $imported++;
+
+            // $message = "Imported: {$file}";
+            // $this->info($message);
+            // $this->logMessage($logFile, $message);
 
         }
 
         $this->logMessage($logFile, "");
+        $this->logMessage($logFile, "Imported ". $imported." images.");
         $this->logMessage($logFile, "Import completed: " . now());
 
         $this->info("Report saved to:");
