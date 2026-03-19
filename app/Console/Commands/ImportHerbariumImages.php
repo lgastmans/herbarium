@@ -55,10 +55,28 @@ class ImportHerbariumImages extends Command
             $rawCollection = $matches[1];
             $normalizedFileValue = $this->normalize($rawCollection);
 
-            if (!isset($lookup[$normalizedFileValue])) {
+            $herbarium = null;
+            $updated = false;
+
+            // Try normal lookup
+            if (isset($lookup[$normalizedFileValue])) {
+                $herbarium = $lookup[$normalizedFileValue];
+            } else {
+                // Try fallback: prepend "F "
+                $fallbackValue = 'F ' . $rawCollection;
+                $normalizedFallback = $this->normalize($fallbackValue);
+
+                if (isset($lookup[$normalizedFallback])) {
+                    $herbarium = $lookup[$normalizedFallback];
+                    $updated = true;
+                }
+            }
+
+            // If still not found → log and continue
+            if (!$herbarium) {
                 $message = "No match for: {$file}";
                 $this->warn($message);
-                $this->logMessage($logFile, $message);                
+                $this->logMessage($logFile, $message);
 
                 continue;
             }
@@ -89,9 +107,14 @@ class ImportHerbariumImages extends Command
 
             $imported++;
 
-            // $message = "Imported: {$file}";
-            // $this->info($message);
-            // $this->logMessage($logFile, $message);
+            if ($updated) {
+                $message = "Updated and imported: {$file}";
+            // } else {
+            //     $message = "Imported: {$file}";
+            }
+
+            $this->info($message);
+            $this->logMessage($logFile, $message);
 
         }
 
