@@ -109,8 +109,8 @@ class ImportHerbariumImages extends Command
 
             if ($updated) {
                 $message = "Updated and imported: {$file}";
-            // } else {
-            //     $message = "Imported: {$file}";
+            } else {
+                $message = "Imported: {$file}";
             }
 
             $this->info($message);
