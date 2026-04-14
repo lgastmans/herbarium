@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Exportable;
@@ -69,7 +70,7 @@ final class UserTable extends PowerGridComponent
             Column::make('Created at', 'created_at_formatted', 'created_at'),
                 //->searchable(),
 
-            Column::action('Action')->hidden(),
+            Column::action('Action'),
         ];
     }
 
@@ -90,12 +91,18 @@ final class UserTable extends PowerGridComponent
     public function actions(User $row): array
     {
         return [
-            Button::add('edit')
-                ->slot('Edit: '.$row->id)
-                ->id()
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('edit', ['rowId' => $row->id])
+            Button::make('destroy', '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/>
+                </svg>')
+                ->class('inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500')
+                ->openModal('delete-user', ['id' => $row->id]),
         ];
+    }
+
+    #[On('refreshTable')]
+    public function refreshTable(): void
+    {
+        $this->dispatch('pg:eventRefresh-default');
     }
 
     /*
