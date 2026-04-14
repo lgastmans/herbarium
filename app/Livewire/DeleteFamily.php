@@ -2,55 +2,39 @@
 
 namespace App\Livewire;
 
-//use Livewire\Component;
 use App\Models\Family;
 use App\Models\Herbarium;
-use Illuminate\Validation\Rule;
 use LivewireUI\Modal\ModalComponent;
 
 class DeleteFamily extends ModalComponent
 {
-
-    public Family $family;
-
     public $id;
 
-
-    /*
-    public function rules()
-    {
-        return [
-            'id' => [
-                Rule::exists('herbarium', 'family_id')
-            ],
-        ];
-    }
-    */
-    
+    public ?string $errorMessage = null;
 
     public function delete()
     {
         $herbarium = Herbarium::where('family_id','=',$this->id)->first();
 
         if ($herbarium) {
-            $this->dispatch('family-exists', Model: 'Family', ColNum: $herbarium->collection_number);
+            $this->errorMessage = 'This family cannot be deleted because it is present in herbarium collection number '.$herbarium->collection_number.'.';
+
+            return;
         }
-        else {
 
-            $model = Family::findOrFail($this->id);
-     
-            $family = $model->family;
+        $model = Family::findOrFail($this->id);
 
-            $model->delete();
-            
-            activity()
-                ->performedOn($model)
-                ->withProperties(['family'=>$family])
-                ->log('Family deleted.');  
+        $family = $model->family;
 
-            $this->dispatch('refreshTable');
-            $this->closeModal();
-        }
+        $model->delete();
+
+        activity()
+            ->performedOn($model)
+            ->withProperties(['family'=>$family])
+            ->log('Family deleted.');
+
+        $this->dispatch('refreshTable');
+        $this->closeModal();
     }
 
     public function render()

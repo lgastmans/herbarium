@@ -17,14 +17,11 @@ use PowerComponents\LivewirePowerGrid\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 
-use LivewireUI\Modal\ModalComponent;
-
 final class FamilyTable extends PowerGridComponent
 {
 
     public string $sortField = 'family'; 
     public string $sortDirection = 'asc';
-
 
     public function setUp(): array
     {
@@ -62,7 +59,8 @@ final class FamilyTable extends PowerGridComponent
         return PowerGrid::fields()
             ->add('id')
             ->add('family')
-            ->add('name_lower', fn (Family $model) => strtolower(e($model->name)))
+            //->add('family_name', fn (Family $model) => e($model->family))
+            //->add('name_lower', fn (Family $model) => strtolower(e($model->family)))
             ->add('created_at')
             ->add('created_at_formatted', fn (Family $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
     }
@@ -103,7 +101,6 @@ final class FamilyTable extends PowerGridComponent
     {
         return [
             Filter::inputText('family'),
-            Filter::datepicker('created_at_formatted', 'created_at'),
         ];
     }
 
@@ -120,8 +117,7 @@ final class FamilyTable extends PowerGridComponent
                       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"/>
                     </svg>')
                     ->class('inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500')
-                    //->route('plants.update', ['herbarium' => $row])
-                    ->dispatch('openModal', ['edit-family', [ 'family' => $row ]] ),
+                    ->openModal('edit-family', ['family' => $row->id]),
 
                 Button::make('destroy', '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/>
@@ -131,25 +127,7 @@ final class FamilyTable extends PowerGridComponent
             ];
     }
 
-    #[On('family-exists')] 
-    public function notifyFamilyExists($Model, $ColNum)
-    {
-        //$this->js('alert("This '.$Model.' cannot be deleted - it is present in herbarium collection number: "+'.$ColNum.')');
-        $this->js('
-            $dispatch("openModal", { component: "alert-herbarium", arguments: { Model: "'.$Model.'", ColNum: "'.$ColNum.'"} });
-        ');
-    }
-
-    protected function getListeners()
-    {
-        return array_merge(
-            parent::getListeners(),
-            [
-                'refreshTable',
-            ]
-        );
-    }
-
+    #[On('refreshTable')]
     public function refreshTable(): void
     {
         $this->dispatch('pg:eventRefresh-default');
