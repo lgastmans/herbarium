@@ -17,11 +17,10 @@ use PowerComponents\LivewirePowerGrid\Facades\Rule;
 
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
-
+use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
-//use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
@@ -34,7 +33,7 @@ use Illuminate\Support\Facades\Log;
 
 final class HerbariumTable extends PowerGridComponent
 {
-    //use WithExport;
+    use WithExport;
 
     public string $tableName = 'herbarium';
 

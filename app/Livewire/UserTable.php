@@ -14,9 +14,12 @@ use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 final class UserTable extends PowerGridComponent
 {
+    use WithExport;
+    
     public string $tableName = 'users';
 
     public string $sortField = 'name'; 

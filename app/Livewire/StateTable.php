@@ -14,11 +14,14 @@ use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 use LivewireUI\Modal\ModalComponent;
 
 final class StateTable extends PowerGridComponent
 {
+    use WithExport;
+    
     public string $tableName = 'states';
 
     public string $sortField = 'name'; 

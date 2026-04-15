@@ -14,10 +14,12 @@ use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 final class ActivityLogTable extends PowerGridComponent
 {
-
+    use WithExport;
+    
     public string $tableName = 'activity';
     
     public string $sortField = 'created_at';
