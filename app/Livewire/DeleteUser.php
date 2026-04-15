@@ -15,6 +15,10 @@ class DeleteUser extends ModalComponent
 
     public function delete()
     {
+        if (!auth()->user()?->is_admin) {
+            abort(403, 'Unauthorized');
+        }
+
         $user = User::findOrFail($this->id);
 
         if (Auth::id() === $user->id) {

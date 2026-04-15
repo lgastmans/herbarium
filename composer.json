@@ -15,7 +15,7 @@
         "livewire/volt": "^1.0",
         "maatwebsite/excel": "^3.1",
         "openspout/openspout": "^4.23",
-        "power-components/livewire-powergrid": "^5.0",
+        "power-components/livewire-powergrid": "^6.0",
         "spatie/laravel-activitylog": "^4.8",
         "wire-elements/modal": "^2.0",
         "wireui/wireui": "^1.19"

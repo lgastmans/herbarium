@@ -3,23 +3,23 @@
 namespace App\Livewire;
 
 use Spatie\Activitylog\Models\Activity;
-use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\On; 
 use Illuminate\Support\Carbon;
+
+use Illuminate\Database\Eloquent\Builder;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Exportable;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
-use PowerComponents\LivewirePowerGrid\Facades\Rule;
-use PowerComponents\LivewirePowerGrid\Footer;
-use PowerComponents\LivewirePowerGrid\Header;
-use PowerComponents\LivewirePowerGrid\PowerGrid;
+use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
 
 final class ActivityLogTable extends PowerGridComponent
 {
 
-    //public string $primaryKey = 'activity_log.id';
+    public string $tableName = 'activity';
+    
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';    
 
@@ -28,12 +28,14 @@ final class ActivityLogTable extends PowerGridComponent
         $this->showCheckBox();
 
         return [
-            Exportable::make('export')
+            (new Exportable('export'))
                 ->striped()
                 ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV),
-            Header::make()->showSearchInput(),
-            Footer::make()
-                ->showPerPage(perPage: 50, perPageValues: [25, 50, 100, 0])
+
+            PowerGrid::header()
+                ->showSearchInput(),
+
+            PowerGrid::footer()
                 ->showPerPage()
                 ->showRecordCount(),
         ];

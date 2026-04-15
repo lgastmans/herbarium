@@ -11,18 +11,17 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
-use PowerComponents\LivewirePowerGrid\Exportable;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
 use PowerComponents\LivewirePowerGrid\Facades\Rule;
-use PowerComponents\LivewirePowerGrid\Footer;
-use PowerComponents\LivewirePowerGrid\Header;
 
-use PowerComponents\LivewirePowerGrid\PowerGrid;
-//use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
+
+use PowerComponents\LivewirePowerGrid\Components\SetUp\Exportable;
+use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
+
 
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
-use PowerComponents\LivewirePowerGrid\Traits\WithExport;
+//use PowerComponents\LivewirePowerGrid\Traits\WithExport;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Http;
@@ -35,11 +34,11 @@ use Illuminate\Support\Facades\Log;
 
 final class HerbariumTable extends PowerGridComponent
 {
-    use WithExport;
+    //use WithExport;
 
     public string $tableName = 'herbarium';
 
-    public string $primaryKey = 'herbarium.id';
+//    public string $primaryKey = 'herbarium.id';
 
 //    public string $sortField = 'families.family, genuses.name'; 
     public string $sortField = 'collection_number';
@@ -58,15 +57,26 @@ final class HerbariumTable extends PowerGridComponent
         $this->showCheckBox();
 
         $config = [
+            PowerGrid::header()
+                ->showSearchInput(),
+
+            PowerGrid::footer()
+                ->showPerPage(50, [25, 50, 100, 0])
+                ->showRecordCount(),
+        ];
+
+        /*
+        $config = [
             Header::make()->showSearchInput(),
             Footer::make()
                 ->showPerPage(perPage: 50, perPageValues: [25, 50, 100, 0]),
         ];
+        */
 
         if (Auth::check()) {
             array_unshift(
                 $config,
-                Exportable::make(fileName: 'dry-herbarium')
+                (new Exportable('dry-herbarium'))
                     ->striped()
                     ->type(Exportable::TYPE_XLS, Exportable::TYPE_CSV)
                     ->columnWidth([
@@ -140,14 +150,12 @@ final class HerbariumTable extends PowerGridComponent
     {
         if (Auth::check()) {
             return [
-                Button::add('herbarium-save')
+                Button::make('herbarium-save')
                     ->slot('Add plant')
                     ->class('text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80')
                     ->route('plants.create', []),
                     // ->openModal('projects-save', []),
-                // Button::add('download-labels')
-                //     ->slot('Download Labels')
-                //     ->dispatch('download-labels', []),
+
             ];
         }
             return [];
@@ -189,7 +197,8 @@ final class HerbariumTable extends PowerGridComponent
             ->add('seeds')
             ->add('forest')
             
-            ->add('created_at');
+            ->add('created_at')
+            ->add('actions');
             
     }
 
@@ -223,7 +232,8 @@ final class HerbariumTable extends PowerGridComponent
             Column::make('Herbarium #', 'herbarium_number')
                 ->sortable()
                 ->searchable()
-                ->visibleInExport(visible: false),
+                ->visibleInExport(visible: false)
+                ->hidden(),
 
             Column::make('Vernacular name', 'vernacular_name')
                 ->sortable()
@@ -337,7 +347,7 @@ final class HerbariumTable extends PowerGridComponent
 
 
             //Column::action('Action')->hidden(!Auth::check())
-            Column::action('Action')
+            Column::action('Action', 'actions')
                 ->visibleInExport(visible: false)
                 ->title('<div wire:ignore><button id="toggleImagesBtn" wire:click="filterWithImages" class="ml-2 bg-red-500 text-white px-2 py-1 rounded">Only Images</button></div>')
     
@@ -418,19 +428,7 @@ final class HerbariumTable extends PowerGridComponent
 
     public function actions(Herbarium $row): array
     {
-        /*
-        if (count($row->images) > 0)
-            $svg = '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
-                        <circle cx="18" cy="6" r="7" fill="green"/>
-                        <text x="18" y="10" font-family="Arial" font-size="11" text-anchor="middle" fill="white">'.count($row->images).'</text>
-                    </svg>';
-        else
-            $svg = '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
-                    </svg>';
-        */
-
+        
         $count = count($row->images);
 
         if ($count === 0) {
@@ -482,32 +480,35 @@ final class HerbariumTable extends PowerGridComponent
             </svg>';
         }
 
-       
-
         if (Auth::check()) {
             return [
-                Button::make('edit', '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                Button::make('edit')
+                    ->slot('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                </svg>')
                     ->class('inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500')
                     ->route('plants.update', ['herbarium' => $row]),
 
-                Button::make('destroy', '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                Button::make('destroy')
+                    ->slot('<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                         </svg>')
                     ->class('inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500')
                     ->openModal('delete-plant', ['id' => $row->id]),
 
-                Button::make('pdf', '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                Button::make('pdf')
+                    ->slot('<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 17v-5h1.5a1.5 1.5 0 1 1 0 3H5m12 2v-5h2m-2 3h2M5 10V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1v6M5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1M10 3v4a1 1 0 0 1-1 1H5m6 4v5h1.375A1.627 1.627 0 0 0 14 15.375v-1.75A1.627 1.627 0 0 0 12.375 12H11Z"/>
                         </svg>')
                     ->class('inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500')
                     ->dispatch('export-pdf', ['id' => $row->id]),
                     //->route('herbarium-label', ['id' => $row->id]),
 
-                Button::make('images', $svg)
+                Button::make('images')
+                    ->slot($svg)
                     ->class('inline-flex items-center px-2 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500')
-                    ->openModal('view-herbarium-image', ['herbarium' => $row]),                    
+                    ->openModal('view-herbarium-image', ['herbarium' => $row]),
+
 
             ];
         }

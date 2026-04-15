@@ -1,1 +1,0 @@
-<span>{!! $noDataLabel !!}</span>

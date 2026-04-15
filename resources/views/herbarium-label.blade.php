@@ -71,6 +71,10 @@
 				padding-bottom: 20px;
 			}
 
+			.header {
+				vertical-align: top;
+			}
+
 			table {
 			  font-family: "Roboto", sans-serif;
 			  font-weight: 400;
@@ -194,7 +198,7 @@
 		            	</td>
 		            </tr>
 		            <tr>
-		                <td >
+		                <td class="header" >
 		                    <b>Habit</b>
 		                </td>
 		                <td colspan="3">
@@ -202,7 +206,7 @@
 		                </td>
 		            </tr>
 		            <tr>
-		                <td >
+		                <td class="header" >
 		                    <b>Frequency</b>
 		                </td>
 		                <td colspan="3">
@@ -210,7 +214,7 @@
 		                </td>
 		            </tr>
 		            <tr>
-		                <td >
+		                <td class="header" >
 		                    <b>Phenology</b>
 		                </td>
 		                <td colspan="3">
@@ -218,7 +222,7 @@
 		                </td>
 		            </tr>
 		            <tr>
-		                <td >
+		                <td class="header">
 		                    <b>Leaf</b>
 		                </td>
 		                <td colspan="3">
@@ -226,7 +230,7 @@
 		                </td>
 		            </tr>
 		            <tr>
-		                <td >
+		                <td class="header" >
 		                    <b>Flower</b>
 		                </td>
 		                <td colspan="3">
@@ -234,7 +238,7 @@
 		                </td>
 		            </tr>
 		            <tr>
-		                <td >
+		                <td class="header">
 		                    <b>Notes</b>
 		                </td>
 		                <td colspan="3">
@@ -243,7 +247,7 @@
 		            </tr>
 		            <tr>
 		            	<!-- The width was 100 but it seemed to wide still -->
-        				<td ><b>Collectors</b></td>
+        				<td class="header"><b>Collectors</b></td>
         				<td >{{ $herbarium->display_collector1 ?? '' }}</td>
         				<td >{{ $herbarium->display_collector2 ?? '' }}</td>
         				<td >{{ $herbarium->display_collector3 ?? '' }}</td>
