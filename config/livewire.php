@@ -65,9 +65,12 @@ return [
 
     'temporary_file_upload' => [
         'disk' => null,        // Example: 'local', 's3'              | Default: 'default'
-        'rules' => null,       // Example: ['file', 'mimes:png,jpg']  | Default: ['required', 'file', 'max:12288'] (12MB)
+        // This global transport rule matches the application's exact 5 MiB
+        // herbarium-image limit. MIME validation stays uploader-specific so
+        // unrelated Livewire uploaders are not restricted to JPEG/PNG.
+        'rules' => ['required', 'file', 'max:5120'],
         'directory' => null,   // Example: 'tmp'                      | Default: 'livewire-tmp'
-        'middleware' => null,  // Example: 'throttle:5,1'             | Default: 'throttle:60,1'
+        'middleware' => 'throttle:120,1', // Allows one temporary request for each file in a 100-image batch.
         'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
             'mov', 'avi', 'wmv', 'mp3', 'm4a',

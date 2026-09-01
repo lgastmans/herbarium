@@ -1,5 +1,6 @@
 <?php
 use App\Livewire\CreatePlant;
+use App\Livewire\ImportHerbariumImages;
 use App\Livewire\UpdatePlant;
 use App\Livewire\DeletePlant;
 use App\Livewire\ReplaceGenus;
@@ -17,6 +18,7 @@ use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\SpecificController;
 use App\Http\Controllers\CollectorController;
 use App\Http\Controllers\GenusImageController;
+use App\Http\Controllers\HerbariumCollectionSearchController;
 use Illuminate\Support\Facades\Route;
 
 use App\Livewire\UploadGenusImage;
@@ -46,6 +48,10 @@ Route::get('/plants/update/{herbarium}', UpdatePlant::class)->name('plants.updat
 Route::get('/plants/replace-genus', ReplaceGenus::class)->name('genus.replace');
 Route::get('/plants/replace-family', ReplaceFamily::class)->name('family.replace');
 Route::get('/plants/replace-place', ReplacePlace::class)->name('place.replace');
+
+Route::get('/herbarium/images/import', ImportHerbariumImages::class)
+    ->middleware(['auth', 'verified', 'admin'])
+    ->name('herbarium.images.import');
 
 
 Route::get('/families', [FamilyController::class, 'index'])->name('families');
@@ -100,6 +106,9 @@ Route::get('users', [UserController::class, 'index'])
 
 
 Route::prefix('ajax')->group(function () {
+    Route::get('/herbaria', HerbariumCollectionSearchController::class)
+        ->middleware(['auth', 'verified', 'admin', 'throttle:120,1'])
+        ->name('ajax.herbaria');
     Route::get('/genus', [GenusController::class, 'getListForSelect'])->name('ajax.genus');
     Route::get('/families', [FamilyController::class, 'getListForSelect'])->name('ajax.families');
     Route::get('/places', [PlaceController::class, 'getListForSelect'])->name('ajax.places');

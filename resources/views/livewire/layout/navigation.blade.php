@@ -57,6 +57,11 @@ new class extends Component
                             <x-dropdown-link :href="route('plants')" wire:navigate>
                                 {{ __('Browse') }}
                             </x-dropdown-link>
+                            @can('import-herbarium-images')
+                                <x-dropdown-link :href="route('herbarium.images.import')" wire:navigate>
+                                    {{ __('Import Images') }}
+                                </x-dropdown-link>
+                            @endcan
                             <x-dropdown-link :href="route('genus.replace')" wire:navigate>
                                 {{ __('Replace Genus') }}
                             </x-dropdown-link>
@@ -167,7 +172,12 @@ new class extends Component
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('plants')" :active="request()->routeIs('plants')" wire:navigate>
                 {{ __('Plants') }}
-            </x-responsive-nav-link>            
+            </x-responsive-nav-link>
+            @can('import-herbarium-images')
+                <x-responsive-nav-link :href="route('herbarium.images.import')" :active="request()->routeIs('herbarium.images.import')" wire:navigate>
+                    {{ __('Import Images') }}
+                </x-responsive-nav-link>
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->

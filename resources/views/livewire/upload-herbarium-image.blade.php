@@ -1,25 +1,46 @@
 <div>
+    <form wire:submit="save" class="space-y-3">
+        <div>
+            <label for="single-herbarium-image-{{ $herbariumId }}" class="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100">
+                Add herbarium image
+            </label>
+            <input
+                id="single-herbarium-image-{{ $herbariumId }}"
+                type="file"
+                wire:model="photo"
+                accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                class="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+            >
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPEG or PNG, maximum 5 MiB.</p>
 
-    <form wire:submit="save">
-
-        <input type="hidden" value="{{$herbarium_id}}" wire:model="herbarium_id" />
-        <input type="hidden" value="{{$genus_id}}" wire:model="genus_id" />
-
-        <div class="grid gap-4 mb-4 grid-cols-2">
-
-            <div class="col-span-10">
-                <input type="file" wire:model="photo" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400">
-             
-                @error('photo') <span class="error">{{ $message }}</span> @enderror
-            </div>
-         
-            <div class="col-span-2">
-                <x-button label="Upload" positive md blue icon="save" type="submit" class="p-4"/>  
-            </div>
-
-
+            @error('photo')
+                <p class="mt-2 text-sm text-red-700 dark:text-red-300" role="alert">{{ $message }}</p>
+            @enderror
         </div>
 
-    </form>
+        @if ($statusMessage !== null)
+            <p
+                @class([
+                    'rounded-md p-3 text-sm',
+                    'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200' => $statusType === 'success',
+                    'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200' => $statusType === 'duplicate',
+                ])
+                role="status"
+                aria-live="polite"
+            >
+                {{ $statusMessage }}
+            </p>
+        @endif
 
+        <x-button
+            label="Upload"
+            positive
+            md
+            blue
+            icon="save"
+            type="submit"
+            wire:loading.attr="disabled"
+            wire:target="photo,save"
+        />
+    </form>
 </div>

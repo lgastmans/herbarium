@@ -10,7 +10,7 @@
 
             <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700">
         
-            <livewire:upload-herbarium-image :herbarium_id="$herbarium->id" :genus_id="$herbarium->genus_id"/>
+            <livewire:upload-herbarium-image :herbarium-id="$herbarium->id" />
         </div>
 
         <!-- Images on the right -->
@@ -53,5 +53,4 @@
     </div>
 
 </div>
-
 

@@ -2,49 +2,57 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Herbarium;
 use App\Models\HerbariumImages;
+use App\Exceptions\HerbariumImageImportException;
+use App\Services\HerbariumImageMatching\HerbariumImageMatcher;
+use App\Services\HerbariumImageMatching\HerbariumImageMatchStatus;
+use App\Services\HerbariumImageMatching\HerbariumImageMatchType;
+use App\Services\HerbariumImageStorage\HerbariumImageAssignmentType;
+use App\Services\HerbariumImageStorage\HerbariumImageImportSource;
+use App\Services\HerbariumImageStorage\HerbariumImageStorageService;
+use App\Services\HerbariumImageStorage\HerbariumImageStorageStatus;
+use Illuminate\Console\Command;
+use Symfony\Component\HttpFoundation\File\File;
+use Throwable;
 
 class ImportHerbariumImages extends Command
 {
     protected $signature = 'herbarium:import-images {path}';
     protected $description = 'Import herbarium images based on collection number filename';
 
-    public function handle()
+    public function handle(
+        HerbariumImageMatcher $matcher,
+        HerbariumImageStorageService $storageService,
+    )
     {
         $sourcePath = $this->argument('path');
 
-        if (!is_dir($sourcePath)) {
+        if (! is_dir($sourcePath)) {
             $this->error("Directory not found: {$sourcePath}");
+
             return 1;
         }
 
-        $logFile = storage_path('logs/herbarium-import-' . now()->format('Y-m-d_H-i-s') . '.log');
+        $logFile = storage_path('logs/herbarium-import-'.now()->format('Y-m-d_H-i-s').'.log');
 
         file_put_contents($logFile, "Herbarium Image Import\n");
-        file_put_contents($logFile, "Started: " . now() . "\n\n", FILE_APPEND);
-        
-        $this->logMessage($logFile, "Import folder ".$sourcePath);
+        file_put_contents($logFile, 'Started: '.now()."\n\n", FILE_APPEND);
+
+        $this->logMessage($logFile, 'Import folder '.$sourcePath);
 
         $this->info("Import report: {$logFile}");
 
-        // Build lookup table of normalized collection numbers
-        $herbaria = Herbarium::all();
-        $lookup = [];
-
-        foreach ($herbaria as $herbarium) {
-            $normalized = $this->normalize($herbarium->collection_number);
-            $lookup[$normalized] = $herbarium;
-        }
+        $lookup = $matcher->buildLookup($this->herbariumCandidates());
 
         $files = scandir($sourcePath);
 
         $imported = 0;
 
         foreach ($files as $file) {
+            $result = $matcher->match($file, $lookup);
 
-            if (!preg_match('/^([A-Z]\s\d+|\d+)(?:_\d+)?\.(jpg|jpeg|png)$/i', $file, $matches)) {
+            if ($result->status === HerbariumImageMatchStatus::Invalid) {
                 $message = "Invalid filename format: {$file}";
                 $this->error($message);
                 $this->logMessage($logFile, $message);
@@ -52,28 +60,15 @@ class ImportHerbariumImages extends Command
                 continue;
             }
 
-            $rawCollection = $matches[1];
-            $normalizedFileValue = $this->normalize($rawCollection);
+            if ($result->status === HerbariumImageMatchStatus::Ambiguous) {
+                $message = "Ambiguous match for: {$file} (herbarium IDs: ".implode(', ', $result->candidateIds()).')';
+                $this->warn($message);
+                $this->logMessage($logFile, $message);
 
-            $herbarium = null;
-            $updated = false;
-
-            // Try normal lookup
-            if (isset($lookup[$normalizedFileValue])) {
-                $herbarium = $lookup[$normalizedFileValue];
-            } else {
-                // Try fallback: prepend "F "
-                $fallbackValue = 'F ' . $rawCollection;
-                $normalizedFallback = $this->normalize($fallbackValue);
-
-                if (isset($lookup[$normalizedFallback])) {
-                    $herbarium = $lookup[$normalizedFallback];
-                    $updated = true;
-                }
+                continue;
             }
 
-            // If still not found → log and continue
-            if (!$herbarium) {
+            if ($result->status === HerbariumImageMatchStatus::Unmatched) {
                 $message = "No match for: {$file}";
                 $this->warn($message);
                 $this->logMessage($logFile, $message);
@@ -81,13 +76,14 @@ class ImportHerbariumImages extends Command
                 continue;
             }
 
-            //$herbarium = $lookup[$normalizedFileValue];
+            $herbarium = $result->matchedHerbarium();
+            $updated = $result->matchType === HerbariumImageMatchType::FFallback;
 
-            // Avoid duplicates
+            // Preserve duplicate detection for legacy records whose database
+            // filename still equals the source filename.
             if (HerbariumImages::where('herbarium_id', $herbarium->id)
                 ->where('filename', $file)
                 ->exists()) {
-
                 $message = "Already imported: {$file}";
                 $this->info($message);
                 $this->logMessage($logFile, $message);
@@ -95,15 +91,36 @@ class ImportHerbariumImages extends Command
                 continue;
             }
 
-            $destination = storage_path("app/public/herbarium/{$file}");
+            try {
+                $storageResult = $storageService->import(
+                    $herbarium,
+                    new File($sourcePath.DIRECTORY_SEPARATOR.$file),
+                    $file,
+                    HerbariumImageAssignmentType::Automatic,
+                    HerbariumImageImportSource::Cli,
+                    $result->matchType,
+                );
+            } catch (HerbariumImageImportException $exception) {
+                $message = "Failed to import: {$file} ({$exception->getMessage()})";
+                $this->error($message);
+                $this->logMessage($logFile, $message);
 
-            copy($sourcePath . DIRECTORY_SEPARATOR . $file, $destination);
+                continue;
+            } catch (Throwable $exception) {
+                $message = "Failed to import: {$file} ({$exception->getMessage()})";
+                $this->error($message);
+                $this->logMessage($logFile, $message);
 
-            HerbariumImages::create([
-                'herbarium_id' => $herbarium->id,
-                'genus_id'     => $herbarium->genus_id,
-                'filename'     => $file,
-            ]);
+                continue;
+            }
+
+            if ($storageResult->status === HerbariumImageStorageStatus::Duplicate) {
+                $message = "Already imported: {$file}";
+                $this->info($message);
+                $this->logMessage($logFile, $message);
+
+                continue;
+            }
 
             $imported++;
 
@@ -115,39 +132,27 @@ class ImportHerbariumImages extends Command
 
             $this->info($message);
             $this->logMessage($logFile, $message);
-
         }
 
-        $this->logMessage($logFile, "");
-        $this->logMessage($logFile, "Imported ". $imported." images.");
-        $this->logMessage($logFile, "Import completed: " . now());
+        $this->logMessage($logFile, '');
+        $this->logMessage($logFile, 'Imported '.$imported.' images.');
+        $this->logMessage($logFile, 'Import completed: '.now());
 
-        $this->info("Report saved to:");
+        $this->info('Report saved to:');
         $this->line($logFile);
 
-        $this->info("Import complete.");
+        $this->info('Import complete.');
 
         return 0;
     }
 
     private function logMessage($file, $message)
     {
-        file_put_contents($file, $message . PHP_EOL, FILE_APPEND);
+        file_put_contents($file, $message.PHP_EOL, FILE_APPEND);
     }
 
-    private function normalize($value)
+    protected function herbariumCandidates(): iterable
     {
-        $value = strtoupper($value);
-        $value = preg_replace('/\s+/', '', $value);
-
-        // If purely numeric, remove leading zeros
-        if (ctype_digit($value)) {
-            $value = ltrim($value, '0');
-            if ($value === '') {
-                $value = '0';
-            }
-        }
-
-        return $value;
+        return Herbarium::all();
     }
 }

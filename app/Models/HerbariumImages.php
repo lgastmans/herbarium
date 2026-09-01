@@ -11,7 +11,13 @@ class HerbariumImages extends Model
 
     protected $table = 'herbarium_images';
 
-    protected $fillable = ['herbarium_id', 'genus_id', 'filename'];
+    protected $fillable = [
+        'herbarium_id',
+        'genus_id',
+        'filename',
+        'original_filename',
+        'checksum',
+    ];
 
     public function herbarium()
     {

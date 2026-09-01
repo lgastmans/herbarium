@@ -1,5 +1,10 @@
 Import Herbarium Images
 =======================
+The administrator web workflow and current operational/deployment instructions
+are documented in docs/herbarium-image-imports.md.
+
+The instructions below describe the historical command-line workflow.
+
 Go to the Google Drive containing the folders:
 	Open Firefox > bookmarks bar > AVBG Web files - Google Drive
 
