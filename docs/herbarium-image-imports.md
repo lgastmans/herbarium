@@ -226,6 +226,131 @@ environment.
 9. Confirm the batch import and verify it is reported as skipped, with no new
    image row, stored file, or import activity.
 
+## Crash-related missing image record cleanup
+
+The historical server crash permanently lost 1,337 herbarium image files while
+leaving their database rows behind. The guarded
+`herbarium:prune-missing-image-records` command can audit those rows and create
+a recovery manifest. Its default mode is read-only, and deletion is impossible
+without a separately reviewed manifest, its complete SHA-256 digest, and all
+three confirmed production counts.
+
+Candidates must have null `original_filename` and `checksum` values, a safe
+stored filename, and a confirmed-absent file. Before classifying absence, the
+command requires a healthy, non-empty, listable public herbarium directory and
+readable referenced files. Unsafe, inaccessible, permission-denied, or
+indeterminate paths never qualify. A recovered file immediately prevents its
+record from qualifying. The 190 file-backed checksum-conflict rows have an
+original filename and therefore never qualify.
+
+The audit also discovers actual foreign keys and conventional
+`herbarium_image_id` reference columns, and checks polymorphic activities whose
+subject is `App\Models\HerbariumImages`. Apply mode refuses every candidate with
+an activity or dependent reference; there is no force option and nothing is
+cascaded or nulled.
+
+Run a read-only production audit with the confirmed counts:
+
+```bash
+/opt/alt/php82/usr/bin/php artisan herbarium:prune-missing-image-records \
+  --expected-missing=1337 \
+  --expected-present=2653 \
+  --expected-physical-files=2654
+```
+
+After verifying a current database backup, export the versioned recovery
+manifest to an existing non-public backup directory. Choose a new timestamped
+filename because the command refuses to overwrite any existing manifest:
+
+```bash
+/opt/alt/php82/usr/bin/php artisan herbarium:prune-missing-image-records \
+  --export=/home/u508789628/backups/herbarium-missing-images-YYYYMMDDTHHMMSSZ.json \
+  --expected-missing=1337 \
+  --expected-present=2653 \
+  --expected-physical-files=2654
+```
+
+The manifest is written to a unique mode-`0600` incomplete file, flushed, and
+published by creating a same-directory hard link. Hard-link publication is
+atomic and refuses to replace any existing file, symlink, or other directory
+entry; the command does not fall back to an overwriting rename. If the
+filesystem cannot provide that no-clobber operation, export fails safely and
+removes the incomplete file. The completed file is verified for its inode,
+regular-file type, size, SHA-256, and restrictive permissions before success is
+reported.
+
+The manifest contains a deterministic ID-ordered, complete raw snapshot of
+every candidate, generation and application identifiers, reviewed counts,
+dependency counts, and the complete unreferenced-file audit. Record the full
+SHA-256 printed by the command and review the manifest outside the public web
+root. Do not loosen its permissions: apply mode rejects symlinks, non-regular
+or unreadable files, and any manifest readable by group or other users. It
+validates the supplied digest against the exact bytes read and never changes
+manifest permissions automatically.
+
+Audit and export are designed to run while the application is online. Only
+`--apply` requires Laravel maintenance mode, and the command refuses to proceed
+unless `php artisan down` has been run. After separate deletion approval, run
+the exact reviewed apply command inside the controlled maintenance window:
+
+```bash
+/opt/alt/php82/usr/bin/php artisan herbarium:prune-missing-image-records \
+  --apply \
+  --manifest=/home/u508789628/backups/herbarium-missing-images-YYYYMMDDTHHMMSSZ.json \
+  --manifest-sha256=<reviewed-64-character-digest> \
+  --expected-missing=1337 \
+  --expected-present=2653 \
+  --expected-physical-files=2654
+```
+
+Apply mode verifies the digest and manifest structure, repeats the complete
+storage and dependency audit, compares the complete deterministic
+unreferenced-file audit, locks and revalidates the exact manifest rows, and
+deletes only those IDs in one transaction. An unreferenced file whose name,
+size, checksum, modification time, or reference findings changed therefore
+requires a newly exported and reviewed manifest. Changed or missing candidate
+rows, restored files detected by the checks, reference-count mismatches, and
+deletion failures abort or roll back the operation. It never writes, renames,
+moves, changes permissions on, or deletes an image file.
+
+Candidate row locks do not by themselves serialize concurrent writes to
+polymorphic activities or application tables whose references are not enforced
+by foreign keys. Laravel maintenance mode blocks normal web traffic but does
+not stop queue workers, command-line writers, or administrators changing files
+directly. The controlled apply window must therefore pause all other writers
+and exclude manual restoration, deletion, renaming, or other storage changes
+until the invariant checks are complete.
+
+The audit reports physical files that have no `herbarium_images.filename`
+reference, including filename, size, checksum, modification time, filename
+format, checksum matches, activity properties, and other database filename
+references. The currently known single unreferenced physical file is diagnostic
+only: it is excluded from the deletion manifest and must not be attached,
+renamed, or deleted automatically.
+
+Required production sequence:
+
+1. Deploy the reviewed command without running it in apply mode.
+2. While the application is online, verify the current database backup, run the
+   read-only audit, export a new manifest, and review its exact counts,
+   candidate snapshots, dependencies, unreferenced-file details, and digest.
+3. Obtain explicit approval for deletion using that exact manifest and digest.
+4. Run `php artisan down` to put Laravel into maintenance mode.
+5. Pause or stop queue workers and every other process that can change
+   herbarium images or activities, and prevent manual file/storage changes.
+6. Run the exact reviewed `--apply` command and immediately verify database,
+   activity, timestamp, and permanent-file invariants.
+7. Run `php artisan up` after verification. If apply aborts or any check fails,
+   keep the data untouched, complete the investigation as appropriate, and
+   still bring the application back online with `php artisan up`.
+
+After a future approved cleanup, broken image entries and direct URLs for the
+deleted record IDs disappear or return 404. Auto-increment gaps are harmless.
+Recovered files can be imported later as new image records, but their original
+record IDs are not restored automatically. Recovery requires restoring the
+database backup or carefully reinserting exact row snapshots from the reviewed
+manifest; this command intentionally provides no automatic restoration.
+
 ## Deployment checklist
 
 1. Back up the database and stored images.
