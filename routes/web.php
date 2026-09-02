@@ -18,6 +18,7 @@ use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\SpecificController;
 use App\Http\Controllers\CollectorController;
 use App\Http\Controllers\GenusImageController;
+use App\Http\Controllers\HerbariumImportTemporaryPreviewController;
 use App\Http\Controllers\HerbariumCollectionSearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +53,11 @@ Route::get('/plants/replace-place', ReplacePlace::class)->name('place.replace');
 Route::get('/herbarium/images/import', ImportHerbariumImages::class)
     ->middleware(['auth', 'verified', 'admin'])
     ->name('herbarium.images.import');
+
+Route::get('/herbarium/images/import-preview/{token}', HerbariumImportTemporaryPreviewController::class)
+    ->whereUuid('token')
+    ->middleware(['auth', 'verified', 'admin', 'signed', 'throttle:240,1'])
+    ->name('herbarium.images.import.preview');
 
 
 Route::get('/families', [FamilyController::class, 'index'])->name('families');

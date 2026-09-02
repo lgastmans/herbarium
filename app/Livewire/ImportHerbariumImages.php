@@ -14,6 +14,7 @@ use App\Services\HerbariumImageStorage\HerbariumImageStorageService;
 use App\Services\HerbariumImageStorage\HerbariumImageStorageStatus;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
@@ -521,8 +522,45 @@ class ImportHerbariumImages extends Component
             'unresolvedCount' => $this->unresolvedCount(),
             'remainingCapacity' => $this->remainingCapacity(),
             'canImport' => $this->stagedCount() > 0 && $this->unresolvedCount() === 0,
+            'previewUrls' => $this->temporaryPreviewUrls(),
         ])
             ->layout('layouts.app');
+    }
+
+    /** @return array<string, string> */
+    private function temporaryPreviewUrls(): array
+    {
+        $urls = [];
+
+        foreach ($this->stagedImages as $rowKey => $row) {
+            $temporaryFile = is_array($row) ? ($row['temporary_file'] ?? null) : null;
+
+            if (! is_string($rowKey)
+                || ! Str::isUuid($rowKey)
+                || ! $temporaryFile instanceof TemporaryUploadedFile
+            ) {
+                continue;
+            }
+
+            try {
+                if (! $temporaryFile->exists()) {
+                    continue;
+                }
+
+                $urls[$rowKey] = URL::temporarySignedRoute(
+                    'herbarium.images.import.preview',
+                    now()->addMinutes(10),
+                    [
+                        'token' => $rowKey,
+                        'filename' => $temporaryFile->getFilename(),
+                    ],
+                );
+            } catch (Throwable) {
+                // Expired temporary uploads retain the existing preview fallback.
+            }
+        }
+
+        return $urls;
     }
 
     private function authorizeImport(): void

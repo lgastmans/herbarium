@@ -280,9 +280,9 @@
                         class="grid gap-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-[10rem_minmax(0,1fr)_minmax(18rem,0.8fr)]"
                     >
                         <div>
-                            @if (($row['temporary_file'] ?? null) instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile && $row['temporary_file']->exists())
+                            @if (isset($previewUrls[$rowKey]))
                                 <img
-                                    src="{{ $row['temporary_file']->temporaryUrl() }}"
+                                    src="{{ $previewUrls[$rowKey] }}"
                                     alt="Temporary preview of {{ $row['original_filename'] }}"
                                     class="h-40 w-full rounded-lg bg-gray-100 object-contain dark:bg-gray-800"
                                 >
