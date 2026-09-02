@@ -192,7 +192,9 @@ bytes occur more than once for one herbarium, the lowest eligible image-record
 ID owns the checksum; later records keep a null checksum but may still receive
 their missing original filename. A checksum already owned by another record is
 not moved or overwritten. Identical bytes for different herbaria are allowed.
-Unique-constraint races are reported and processing continues.
+Unique-constraint races are reported and processing continues. Metadata repair
+uses timestamp-neutral updates: historical `created_at` and `updated_at` values
+remain exactly unchanged.
 
 Take and verify a database backup before any apply run. This repair is
 idempotent, but it has no automatic rollback: restoring prior null metadata

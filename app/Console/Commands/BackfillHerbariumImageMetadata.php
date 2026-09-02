@@ -6,6 +6,7 @@ use App\Models\HerbariumImages;
 use Illuminate\Console\Command;
 use Illuminate\Database\QueryException;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -160,42 +161,39 @@ class BackfillHerbariumImageMetadata extends Command
 
         $originalUpdated = false;
         $checksumUpdated = false;
+        $updates = [];
 
         if ($populateChecksum) {
-            try {
-                $checksumUpdated = HerbariumImages::query()
-                    ->whereKey($row->id)
-                    ->whereNull('checksum')
-                    ->update(['checksum' => $checksum]) === 1;
-            } catch (QueryException $exception) {
-                if ($this->isUniqueConstraintFailure($exception)) {
-                    $this->summary['checksum_conflicts']++;
-                    $ownerId = $this->databaseChecksumOwner($row->herbarium_id, $checksum);
-                    $owner = $ownerId === null ? 'another concurrent record' : "image record {$ownerId}";
-                    $this->warn("Image record {$row->id}: checksum conflict with {$owner}; checksum left unchanged.");
-                } else {
-                    $this->summary['unexpected_failures']++;
-                    report($exception);
-                    $this->error("Image record {$row->id}: unexpected database failure; continuing.");
+            $updates['checksum'] = $checksum;
+        }
+
+        if ($populateOriginal) {
+            $updates['original_filename'] = $filename;
+        }
+
+        try {
+            $updated = $this->updateNullMetadata($row->id, $updates);
+            $checksumUpdated = $updated && $populateChecksum;
+            $originalUpdated = $updated && $populateOriginal;
+        } catch (QueryException $exception) {
+            if ($populateChecksum && $this->isUniqueConstraintFailure($exception)) {
+                $this->summary['checksum_conflicts']++;
+                $ownerId = $this->databaseChecksumOwner($row->herbarium_id, $checksum);
+                $owner = $ownerId === null ? 'another concurrent record' : "image record {$ownerId}";
+                $this->warn("Image record {$row->id}: checksum conflict with {$owner}; checksum left unchanged.");
+
+                if ($populateOriginal) {
+                    $originalUpdated = $this->updateOriginalFilenameAfterConflict($row, $filename);
                 }
-            } catch (Throwable $exception) {
+            } else {
                 $this->summary['unexpected_failures']++;
                 report($exception);
                 $this->error("Image record {$row->id}: unexpected database failure; continuing.");
             }
-        }
-
-        if ($populateOriginal) {
-            try {
-                $originalUpdated = HerbariumImages::query()
-                    ->whereKey($row->id)
-                    ->whereNull('original_filename')
-                    ->update(['original_filename' => $filename]) === 1;
-            } catch (Throwable $exception) {
-                $this->summary['unexpected_failures']++;
-                report($exception);
-                $this->error("Image record {$row->id}: original filename could not be updated; continuing.");
-            }
+        } catch (Throwable $exception) {
+            $this->summary['unexpected_failures']++;
+            report($exception);
+            $this->error("Image record {$row->id}: unexpected database failure; continuing.");
         }
 
         if ($originalUpdated || $checksumUpdated) {
@@ -203,6 +201,32 @@ class BackfillHerbariumImageMetadata extends Command
             $this->summary['original_filenames'] += (int) $originalUpdated;
             $this->summary['checksums'] += (int) $checksumUpdated;
             $this->line("Image record {$row->id}: populated ".$this->fieldDescription($originalUpdated, $checksumUpdated).'.');
+        }
+    }
+
+    /** @param array{checksum?: string, original_filename?: string} $updates */
+    private function updateNullMetadata(int $rowId, array $updates): bool
+    {
+        $query = DB::table((new HerbariumImages())->getTable())
+            ->where('id', $rowId);
+
+        foreach (array_keys($updates) as $column) {
+            $query->whereNull($column);
+        }
+
+        return $query->update($updates) === 1;
+    }
+
+    private function updateOriginalFilenameAfterConflict(HerbariumImages $row, string $filename): bool
+    {
+        try {
+            return $this->updateNullMetadata($row->id, ['original_filename' => $filename]);
+        } catch (Throwable $exception) {
+            $this->summary['unexpected_failures']++;
+            report($exception);
+            $this->error("Image record {$row->id}: original filename could not be updated; continuing.");
+
+            return false;
         }
     }
 
