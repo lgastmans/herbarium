@@ -89,6 +89,141 @@ remain. Livewire may retain abandoned temporary files until its normal cleanup
 cycle. Successful and duplicate rows leave staging, while retryable failed rows
 remain staged and continue to trigger the warning.
 
+## Signed temporary previews behind a reverse proxy
+
+Livewire previews remain private files served by its signed
+`livewire.preview-file` route. Do not expose `storage/app/livewire-tmp`, remove
+signature checks, or add a public link for that directory.
+
+The production-style preview failure was caused by a proxy configuration gap:
+the application had no trusted proxy addresses, so Laravel ignored the
+forwarded HTTPS protocol. Livewire signs an absolute preview URL, including its
+scheme and host. An HTTP/HTTPS or host difference between URL generation and
+the later preview request can therefore produce a mixed-content failure or an
+invalid signature even though the temporary file is readable.
+
+There are two proxy layers in the supplied topology:
+
+```text
+public TLS/edge proxy -> herbarium-nginx -> herbarium-app PHP-FPM
+```
+
+The edge proxy terminates public TLS and must set or sanitize the forwarded
+protocol and host. The immediate peer Laravel must trust is the internal
+`herbarium-nginx` service. Configuring only the external edge proxy address is
+insufficient when PHP-FPM receives the request from internal Nginx. Individual
+container addresses are dynamic and must not be copied into production
+configuration.
+
+Set `APP_URL` to the canonical public HTTPS origin. Prefer trusting the narrow
+Docker network CIDR that contains `herbarium-nginx`:
+
+```dotenv
+APP_URL=https://herbarium.example.org
+TRUSTED_PROXIES=172.30.0.0/16
+```
+
+The CIDR above is illustrative, not a repository default. Identify the actual
+Compose network name and its configured subnet with read-only commands:
+
+```bash
+docker inspect herbarium-nginx --format '{{range $network, $_ := .NetworkSettings.Networks}}{{$network}}{{println}}{{end}}'
+docker inspect herbarium-nginx --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{println}}{{end}}'
+docker network inspect <network-name> --format '{{range .IPAM.Config}}{{.Subnet}}{{println}}{{end}}'
+```
+
+`TRUSTED_PROXIES` accepts one IP, a comma-separated list of IPs/CIDRs, or an
+intentional standalone `*`/`**`. A wildcard cannot be mixed into a list. As a
+second supported choice, `TRUSTED_PROXIES=*` tells Laravel to trust only the
+immediate caller it observes for that request. Use this only when PHP-FPM is
+not published externally and is guaranteed to receive web traffic exclusively
+from the controlled internal Nginx service. If PHP-FPM is reachable directly,
+wildcard mode would make that direct caller trusted and allow it to forge
+forwarded origin data.
+
+The outer edge must overwrite or sanitize `X-Forwarded-Proto`,
+`X-Forwarded-Host`, and related forwarding headers before passing requests
+inward. Restrict direct public access to the internal Nginx HTTP port so users
+cannot bypass that edge policy. After changing `APP_URL` or `TRUSTED_PROXIES`,
+refresh Laravel's cached configuration:
+
+```bash
+docker compose exec app php artisan config:clear
+docker compose exec app php artisan config:cache
+```
+
+If production injects environment variables when the container is created
+rather than reading the bind-mounted `.env`, recreate only PHP after reviewing
+the change:
+
+```bash
+docker compose up -d --no-deps --force-recreate app
+```
+
+Confirm that `storage/app/livewire-tmp` is writable by PHP and staged files are
+readable by the PHP worker. A stale configuration cache must not retain an old
+HTTP `APP_URL` or trusted-proxy list.
+
+## Legacy image metadata backfill
+
+`herbarium:backfill-image-metadata` scans image records in ascending ID order,
+using ID-based chunks. It hashes the bytes already stored on the configured
+public disk and uses the stored filename as the best available historical
+`original_filename`. It never renames, copies, or deletes image files, never
+creates or deletes historical image rows, and does not create activities.
+
+The default is a dry run and cannot change the database:
+
+```bash
+docker compose exec app php artisan herbarium:backfill-image-metadata
+```
+
+Database writes require `--apply`. `--limit` provides a deterministic,
+ascending-ID first run:
+
+```bash
+docker compose exec app php artisan herbarium:backfill-image-metadata --apply --limit=100
+docker compose exec app php artisan herbarium:backfill-image-metadata --apply
+```
+
+Existing non-null metadata is preserved. Unsafe stored filenames, missing or
+unreadable files, and hashing errors are reported and skipped. When identical
+bytes occur more than once for one herbarium, the lowest eligible image-record
+ID owns the checksum; later records keep a null checksum but may still receive
+their missing original filename. A checksum already owned by another record is
+not moved or overwritten. Identical bytes for different herbaria are allowed.
+Unique-constraint races are reported and processing continues.
+
+Take and verify a database backup before any apply run. This repair is
+idempotent, but it has no automatic rollback: restoring prior null metadata
+requires that backup or a separately recorded list of modified rows.
+
+### Safe production runbook
+
+Do not run these steps until the operator has approved the backup and target
+environment.
+
+1. Verify a current database backup using the deployment's established backup
+   procedure, and record its location and restore test.
+2. Verify the public disk and permissions without modifying images:
+   `docker compose exec app php artisan tinker --execute="dump(config('filesystems.disks.public.root'));"`
+   and inspect the mounted `storage/app/public/herbarium` directory as the PHP
+   worker.
+3. Run `docker compose exec app php artisan herbarium:backfill-image-metadata`
+   without `--apply`.
+4. Review every missing file, unsafe filename, unreadable/hash failure, and
+   same-herbarium checksum conflict in the report.
+5. Optionally apply a controlled first segment with
+   `docker compose exec app php artisan herbarium:backfill-image-metadata --apply --limit=100`.
+6. Run the complete apply with
+   `docker compose exec app php artisan herbarium:backfill-image-metadata --apply`.
+7. Repeat the dry run and verify that only intentional unresolved rows remain.
+8. In the administrator web importer, stage a known historical image for the
+   same herbarium and verify that the pre-confirmation duplicate advisory is
+   shown.
+9. Confirm the batch import and verify it is reported as skipped, with no new
+   image row, stored file, or import activity.
+
 ## Deployment checklist
 
 1. Back up the database and stored images.
