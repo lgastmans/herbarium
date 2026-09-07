@@ -123,6 +123,11 @@ Livewire may invoke that hook while morphing the component and preserving its
 client queue. It is cleared when Livewire navigation actually begins; a normal
 page unload also discards browser timers.
 
+WireUI's deferred browser asset is loaded before a deferred Livewire runtime.
+This order lets WireUI register its Alpine select controller before Livewire
+starts Alpine. If Livewire starts first, selectors can appear styled while their
+open, clear, selected-label, and search interactions remain inactive.
+
 Accepted matching filenames are a numeric collection number or an `F`-prefixed
 number, with `.jpg`, `.jpeg`, or `.png`, for example `123.jpg`, `F 00123.PNG`,
 or `123_2.jpeg`. A positive `_n` suffix distinguishes additional images but

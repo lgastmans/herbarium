@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Livewire\Mechanisms\FrontendAssets\FrontendAssets;
 use Tests\TestCase;
 
 class ImportHerbariumImagesUiPolishTest extends TestCase
@@ -13,6 +14,34 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
         $this->assertIsString($layout);
         $this->assertSame(1, substr_count($layout, '@livewireStyles'));
         $this->assertSame(1, substr_count($layout, '@livewireScripts'));
+    }
+
+    public function test_wireui_registers_before_the_deferred_livewire_runtime(): void
+    {
+        $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $provider = file_get_contents(app_path('Providers/AppServiceProvider.php'));
+
+        $this->assertIsString($layout);
+        $this->assertIsString($provider);
+        $this->assertStringContainsString('<wireui:scripts />', $layout);
+        $this->assertStringContainsString('@livewireScripts', $layout);
+        $this->assertLessThan(
+            strpos($layout, '@livewireScripts'),
+            strpos($layout, '<wireui:scripts />'),
+        );
+        $this->assertStringContainsString('Livewire::useScriptTagAttributes([', $provider);
+        $this->assertStringContainsString("'defer' => true", $provider);
+
+        $livewireScripts = FrontendAssets::scripts();
+
+        $this->assertMatchesRegularExpression('/<script[^>]+defer="true"[^>]*><\/script>/', $livewireScripts);
+
+        $this->get(route('wireui.assets.scripts'))->assertOk();
+
+        $wireUiAsset = file_get_contents(base_path('vendor/wireui/wireui/dist/wireui.js'));
+
+        $this->assertIsString($wireUiAsset);
+        $this->assertStringContainsString('wireui_select', $wireUiAsset);
     }
 
     public function test_failure_and_import_loading_states_start_hidden_and_toggle_with_their_directives(): void

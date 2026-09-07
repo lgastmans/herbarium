@@ -22,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // WireUI's deferred asset is encountered before Livewire in the app
+        // layout and must register its Alpine components before alpine:init.
+        Livewire::useScriptTagAttributes([
+            'defer' => true,
+        ]);
+
         Livewire::addPersistentMiddleware([
             EnsureEmailIsVerified::class,
             EnsureUserIsAdministrator::class,
