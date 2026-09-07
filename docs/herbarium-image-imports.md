@@ -118,6 +118,11 @@ be signed in with a verified email. The single-image uploader remains available
 to verified users under its existing authorization behavior; direct save calls
 still reject guests and unverified users.
 
+The pacing timer is not cleared by Alpine's component-destruction hook because
+Livewire may invoke that hook while morphing the component and preserving its
+client queue. It is cleared when Livewire navigation actually begins; a normal
+page unload also discards browser timers.
+
 Accepted matching filenames are a numeric collection number or an `F`-prefixed
 number, with `.jpg`, `.jpeg`, or `.png`, for example `123.jpg`, `F 00123.PNG`,
 or `123_2.jpeg`. A positive `_n` suffix distinguishes additional images but

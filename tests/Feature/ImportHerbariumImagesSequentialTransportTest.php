@@ -36,6 +36,8 @@ class ImportHerbariumImagesSequentialTransportTest extends TestCase
         $this->assertStringContainsString('this.waitingBetweenFiles = true;', $view);
         $this->assertStringContainsString('this.paceTimer = window.setTimeout(() => {', $view);
         $this->assertStringContainsString('window.clearTimeout(this.paceTimer);', $view);
+        $this->assertStringContainsString('x-on:livewire:navigating.window="cancelPaceTimer()"', $view);
+        $this->assertStringNotContainsString('destroy() {', $view);
         $this->assertStringContainsString('this.waitingBetweenFiles = false;', $view);
         $this->assertStringContainsString('}, 250);', $view);
         $this->assertStringContainsString(

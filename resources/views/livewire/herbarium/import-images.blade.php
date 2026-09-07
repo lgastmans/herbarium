@@ -25,11 +25,15 @@
             }
         },
 
-        destroy() {
+        // Alpine's destroy hook can run during a Livewire morph while this
+        // component's queue state is preserved, so cancel only on navigation.
+        cancelPaceTimer() {
             if (this.paceTimer !== null) {
                 window.clearTimeout(this.paceTimer);
                 this.paceTimer = null;
             }
+
+            this.waitingBetweenFiles = false;
         },
 
         async addFiles(fileList) {
@@ -184,6 +188,7 @@
     x-on:batch-import-finished.window="remainingCapacity = Number($event.detail.remaining); stagedCount = Number($event.detail.stagedCount)"
     x-on:beforeunload.window="if (hasDiscardableWork()) { $event.preventDefault(); $event.returnValue = '' }"
     x-on:livewire:navigate.window="confirmNavigation($event)"
+    x-on:livewire:navigating.window="cancelPaceTimer()"
 >
     <div class="mx-auto max-w-7xl space-y-6">
         <header>
