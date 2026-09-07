@@ -47,7 +47,10 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
         $this->assertStringContainsString('accept="image/jpeg,image/png,.jpg,.jpeg,.png"', $input);
         $this->assertStringContainsString('x-ref="fileInput"', $input);
         $this->assertStringContainsString('x-on:change="addFiles($event.target.files)"', $input);
-        $this->assertStringContainsString('x-bind:disabled="uploading || analyzing || remainingCapacity === 0"', $input);
+        $this->assertStringContainsString(
+            'x-bind:disabled="uploading || waitingBetweenFiles || analyzing || remainingCapacity === 0"',
+            $input,
+        );
         $this->assertSame(1, preg_match_all('/<input\s+[^>]*type="file"[^>]*>/s', $view));
         $this->assertStringContainsString('for="herbarium-image-chooser"', $view);
         $this->assertStringContainsString('Choose images', $view);

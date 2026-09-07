@@ -31,6 +31,8 @@ class ImportHerbariumImages extends Component
 
     public const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+    private const PREVIEW_URL_LIFETIME_SECONDS = 10 * 60;
+
     public mixed $incomingFile = null;
 
     /** @var array<string, array<string, mixed>> */
@@ -92,6 +94,7 @@ class ImportHerbariumImages extends Component
             'key' => $rowKey,
             'original_filename' => $originalFilename,
             'temporary_file' => $file,
+            'preview_expires_at' => now()->addSeconds(self::PREVIEW_URL_LIFETIME_SECONDS)->timestamp,
             'match_status' => 'pending',
             'match_type' => null,
             'candidate_ids' => [],
@@ -534,10 +537,14 @@ class ImportHerbariumImages extends Component
 
         foreach ($this->stagedImages as $rowKey => $row) {
             $temporaryFile = is_array($row) ? ($row['temporary_file'] ?? null) : null;
+            $previewExpiresAt = is_array($row)
+                ? filter_var($row['preview_expires_at'] ?? null, FILTER_VALIDATE_INT)
+                : false;
 
             if (! is_string($rowKey)
                 || ! Str::isUuid($rowKey)
                 || ! $temporaryFile instanceof TemporaryUploadedFile
+                || $previewExpiresAt === false
             ) {
                 continue;
             }
@@ -547,9 +554,19 @@ class ImportHerbariumImages extends Component
                     continue;
                 }
 
+                $now = now();
+
+                if ($previewExpiresAt <= $now->timestamp
+                    || $previewExpiresAt > $now->timestamp + self::PREVIEW_URL_LIFETIME_SECONDS
+                ) {
+                    continue;
+                }
+
+                $expiresAt = $now->copy()->setTimestamp($previewExpiresAt);
+
                 $urls[$rowKey] = URL::temporarySignedRoute(
                     'herbarium.images.import.preview',
-                    now()->addMinutes(10),
+                    $expiresAt,
                     [
                         'token' => $rowKey,
                         'filename' => $temporaryFile->getFilename(),

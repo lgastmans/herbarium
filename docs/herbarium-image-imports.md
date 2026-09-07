@@ -54,14 +54,69 @@ PHP GD must be built with JPEG read support as well as PNG support; the supplied
 Docker image installs the Debian JPEG development library and configures GD
 with `--with-jpeg` before compiling the extension.
 
+## Hostinger MySQL connection-rate hardening
+
+Hostinger applies an account-level limit of approximately 20 new MySQL
+connections per second. A large batch creates several authenticated requests
+per image: a Livewire temporary upload, a staging action, and private preview
+traffic, in addition to capacity checks and final filename analysis. The
+observed `SQLSTATE[HY000] [2002] Operation not permitted` failure occurred while
+authentication middleware was restoring the administrator, before the
+requested importer action ran. It is therefore not an importer validation or
+storage failure.
+
+Persistent PDO connections are opt-in for the application's `mysql` connection:
+
+```dotenv
+DB_PERSISTENT=false
+```
+
+The default remains `false`. Boolean parsing accepts only a true-like value as
+enabled; false-like, empty, and invalid values stay disabled. The option is
+also forced off in the testing environment and is not added to SQLite,
+PostgreSQL, or SQL Server connections. Enabling it does not replace existing
+MySQL PDO options such as `MYSQL_ATTR_SSL_CA`.
+
+For a future approved Hostinger production deployment, set all three values:
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+DB_PERSISTENT=true
+```
+
+`APP_DEBUG=false` is required so an infrastructure failure cannot render a
+Laravel exception page containing SQL text, stack traces, or server paths.
+Importer action failures already return generic browser messages and keep raw
+exceptions in server-side logs only.
+
+After reviewing the production environment change, refresh Laravel's cached
+configuration with the Hostinger PHP 8.2 binary:
+
+```bash
+/opt/alt/php82/usr/bin/php artisan config:clear
+/opt/alt/php82/usr/bin/php artisan config:cache
+```
+
+Verify only the resolved application environment, debug boolean, and
+`PDO::ATTR_PERSISTENT` boolean through an approved read-only diagnostic. Never
+dump the complete database connection configuration, environment, `phpinfo()`,
+credentials, host, SSL path, or other secrets into a terminal transcript,
+rendered page, or log.
+
 ## Web workflow and permissions
 
 The administrator-only **Import Images** page accepts at most 100 staged JPEG
-or PNG files. The files are uploaded sequentially and processed synchronously
-when the administrator confirms the import. Administrators must be signed in
-with a verified email. The single-image uploader remains available to verified
-users under its existing authorization behavior; direct save calls still
-reject guests and unverified users.
+or PNG files. The files are uploaded sequentially with exactly one
+`$wire.upload` call per file and a 250 ms pause between completed file
+iterations. There is no delay before the first file, no concurrent upload or
+overlapping pacing timer, no automatic retry, and filename analysis runs once
+after the current selected group finishes. An individual upload or staging
+failure is recorded and the queue continues. The files are processed
+synchronously when the administrator confirms the import. Administrators must
+be signed in with a verified email. The single-image uploader remains available
+to verified users under its existing authorization behavior; direct save calls
+still reject guests and unverified users.
 
 Accepted matching filenames are a numeric collection number or an `F`-prefixed
 number, with `.jpg`, `.jpeg`, or `.png`, for example `123.jpg`, `F 00123.PNG`,
@@ -91,9 +146,24 @@ remain staged and continue to trigger the warning.
 
 ## Signed temporary previews behind a reverse proxy
 
-Livewire previews remain private files served by its signed
-`livewire.preview-file` route. Do not expose `storage/app/livewire-tmp`, remove
-signature checks, or add a public link for that directory.
+Batch previews remain private files served through the authenticated,
+verified-administrator, signed, extensionless
+`herbarium.images.import.preview` route. The standard signed
+`livewire.preview-file` route remains unchanged. Do not expose
+`storage/app/livewire-tmp`, remove signature checks, or add a public link for
+that directory. Temporary storage lookup uses Livewire's generated temporary
+filename from the signed query, never the client-provided original filename.
+
+Each staged row receives one fixed expiry timestamp 10 minutes in the future;
+the signed URL itself is never persisted in public Livewire state. The server
+rejects a missing, expired, or more-than-10-minutes-future timestamp instead of
+signing it. Consequently, later staging, selector, and duplicate-indicator
+renders produce the identical `src` for an existing row throughout its preview
+lifetime; Livewire does not assign a new URL and the browser does not download
+every old thumbnail again. A new row still receives its own signed URL. Once
+the row's preview expires, or if the temporary file disappears, a subsequent
+render uses the existing **Temporary preview expired** fallback. Removing a row
+still deletes its temporary file and removes the keyed row and thumbnail.
 
 The production-style preview failure was caused by a proxy configuration gap:
 the application had no trusted proxy addresses, so Laravel ignored the

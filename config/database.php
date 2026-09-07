@@ -2,6 +2,13 @@
 
 use Illuminate\Support\Str;
 
+$persistentMysqlConnection = env('APP_ENV') !== 'testing'
+    && filter_var(
+        env('DB_PERSISTENT', false),
+        FILTER_VALIDATE_BOOLEAN,
+        FILTER_NULL_ON_FAILURE,
+    ) === true;
+
 return [
 
     /*
@@ -60,6 +67,7 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_PERSISTENT => $persistentMysqlConnection,
             ]) : [],
         ],
 

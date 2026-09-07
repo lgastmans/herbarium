@@ -4,8 +4,10 @@
     x-data="{
         queue: [],
         uploading: false,
+        waitingBetweenFiles: false,
         analyzing: false,
         groupStarted: false,
+        paceTimer: null,
         currentFilename: '',
         progress: 0,
         completed: 0,
@@ -14,12 +16,19 @@
         failures: [],
 
         hasDiscardableWork() {
-            return this.uploading || this.analyzing || this.queue.length > 0 || this.stagedCount > 0;
+            return this.uploading || this.waitingBetweenFiles || this.analyzing || this.queue.length > 0 || this.stagedCount > 0;
         },
 
         confirmNavigation(event) {
             if (this.hasDiscardableWork() && !window.confirm('Leave this page and discard the staged image batch?')) {
                 event.preventDefault();
+            }
+        },
+
+        destroy() {
+            if (this.paceTimer !== null) {
+                window.clearTimeout(this.paceTimer);
+                this.paceTimer = null;
             }
         },
 
@@ -29,7 +38,7 @@
 
             if (files.length === 0) return;
 
-            if (this.uploading || this.analyzing) {
+            if (this.uploading || this.waitingBetweenFiles || this.analyzing) {
                 this.failures.push({
                     filename: 'Selection',
                     message: 'Wait for the current upload group to finish before adding more images.',
@@ -84,7 +93,7 @@
         },
 
         processNext() {
-            if (this.uploading || this.analyzing) return;
+            if (this.uploading || this.waitingBetweenFiles || this.analyzing) return;
 
             if (this.queue.length === 0) {
                 this.finishGroup();
@@ -129,12 +138,28 @@
         },
 
         completeCurrent() {
+            if (!this.uploading) return;
+
             this.completed += 1;
             this.queue.shift();
             this.uploading = false;
             this.currentFilename = '';
             this.progress = 0;
-            this.processNext();
+
+            if (this.queue.length === 0) {
+                this.processNext();
+                return;
+            }
+
+            this.waitingBetweenFiles = true;
+
+            if (this.paceTimer !== null) return;
+
+            this.paceTimer = window.setTimeout(() => {
+                this.paceTimer = null;
+                this.waitingBetweenFiles = false;
+                this.processNext();
+            }, 250);
         },
 
         async finishGroup() {
@@ -175,7 +200,7 @@
 
         <div
             class="rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 text-center shadow-sm transition dark:border-gray-600 dark:bg-gray-900"
-            x-bind:class="{ 'pointer-events-none opacity-60': uploading || analyzing || remainingCapacity === 0 }"
+            x-bind:class="{ 'pointer-events-none opacity-60': uploading || waitingBetweenFiles || analyzing || remainingCapacity === 0 }"
         >
             <svg class="mx-auto h-10 w-10 text-gray-400" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V18a2.25 2.25 0 0 0 2.25 2.25h13.5A2.25 2.25 0 0 0 21 18v-1.5M16.5 8.25 12 3.75m0 0-4.5 4.5M12 3.75V15" />
@@ -197,7 +222,7 @@
                 accept="image/jpeg,image/png,.jpg,.jpeg,.png"
                 class="sr-only"
                 x-on:change="addFiles($event.target.files)"
-                x-bind:disabled="uploading || analyzing || remainingCapacity === 0"
+                x-bind:disabled="uploading || waitingBetweenFiles || analyzing || remainingCapacity === 0"
             >
             <noscript>
                 <p class="mt-3 text-sm text-red-700">JavaScript is required for safe one-file-at-a-time temporary uploads.</p>
@@ -209,13 +234,14 @@
 
         <div
             class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/40"
-            x-show="uploading || analyzing || queue.length > 0"
+            x-show="uploading || waitingBetweenFiles || analyzing || queue.length > 0"
             x-cloak
             aria-live="polite"
         >
             <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <p class="font-medium text-blue-950 dark:text-blue-100">
                     <span x-show="uploading">Uploading <span x-text="currentFilename"></span></span>
+                    <span x-show="waitingBetweenFiles">Preparing the next file…</span>
                     <span x-show="analyzing">Analyzing the newly staged filenames…</span>
                 </p>
                 <p class="text-blue-800 dark:text-blue-200">
@@ -475,7 +501,7 @@
                 wire:confirm="Import every assigned staged image now? Each image will be processed independently."
                 wire:loading.attr="disabled"
                 wire:target="importBatch"
-                x-bind:disabled="uploading || analyzing || !@js($canImport)"
+                x-bind:disabled="uploading || waitingBetweenFiles || analyzing || !@js($canImport)"
                 @disabled(! $canImport)
                 aria-describedby="batch-import-button-help"
                 class="inline-flex items-center justify-center rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-600 dark:disabled:bg-gray-700 dark:disabled:text-gray-300"

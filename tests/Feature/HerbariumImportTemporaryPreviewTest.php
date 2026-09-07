@@ -55,8 +55,97 @@ class HerbariumImportTemporaryPreviewTest extends TestCase
         $this->assertArrayHasKey('signature', $query);
         $this->assertArrayHasKey('expires', $query);
         $this->assertArrayNotHasKey('preview_url', $rows[$rowKey]);
+        $this->assertSame($rows[$rowKey]['preview_expires_at'], (int) $query['expires']);
 
         $component->assertSee('/herbarium/images/import-preview/'.$rowKey, escape: false);
+    }
+
+    public function test_staged_preview_urls_remain_stable_when_later_rows_and_unrelated_state_render(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+        Carbon::setTestNow('2026-09-07 10:01:00');
+
+        $component = Livewire::test(ImportHerbariumImages::class)
+            ->set('incomingFile', UploadedFile::fake()->image('first.jpg', 8, 8))
+            ->call('stageIncomingUpload');
+        $firstRowKey = array_key_first($component->get('stagedImages'));
+        $firstUrl = $component->instance()->render()->getData()['previewUrls'][$firstRowKey] ?? null;
+
+        $this->assertIsString($firstUrl);
+        $this->travel(2)->minutes();
+
+        $component
+            ->set('incomingFile', UploadedFile::fake()->image('second.png', 8, 8))
+            ->call('stageIncomingUpload')
+            ->set('batchMessage', 'Unrelated component state changed.');
+
+        $rows = $component->get('stagedImages');
+        $rowKeys = array_keys($rows);
+        $previewUrls = $component->instance()->render()->getData()['previewUrls'];
+
+        $this->assertSame($firstUrl, $previewUrls[$firstRowKey] ?? null);
+        $this->assertArrayHasKey($rowKeys[1], $previewUrls);
+        $this->assertNotSame($firstUrl, $previewUrls[$rowKeys[1]]);
+
+        foreach ($previewUrls as $rowKey => $previewUrl) {
+            $parts = parse_url($previewUrl);
+            $this->assertSame('/herbarium/images/import-preview/'.$rowKey, $parts['path'] ?? null);
+            $this->assertDoesNotMatchRegularExpression('/\.(?:jpe?g|png)\z/i', (string) ($parts['path'] ?? ''));
+            $this->assertTrue(URL::hasValidSignature(
+                \Illuminate\Http\Request::create($previewUrl),
+            ));
+        }
+
+        Carbon::setTestNow();
+    }
+
+    public function test_expired_stable_preview_returns_the_existing_fallback_on_render(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $component = Livewire::test(ImportHerbariumImages::class)
+            ->set('incomingFile', UploadedFile::fake()->image('expired.jpg', 8, 8))
+            ->call('stageIncomingUpload');
+        $rowKey = array_key_first($component->get('stagedImages'));
+
+        $this->assertArrayHasKey(
+            $rowKey,
+            $component->instance()->render()->getData()['previewUrls'],
+        );
+
+        $this->travel(11)->minutes();
+
+        $view = $component->instance()->render();
+
+        $this->assertArrayNotHasKey(
+            $rowKey,
+            $view->getData()['previewUrls'],
+        );
+        $component
+            ->set('batchMessage', 'Trigger an unrelated render.')
+            ->assertSee('Temporary preview expired');
+
+        $this->travelBack();
+    }
+
+    public function test_tampered_preview_expiry_cannot_create_a_long_lived_signed_url(): void
+    {
+        $this->actingAs(User::factory()->admin()->create());
+
+        $component = Livewire::test(ImportHerbariumImages::class)
+            ->set('incomingFile', UploadedFile::fake()->image('tampered.jpg', 8, 8))
+            ->call('stageIncomingUpload');
+        $rows = $component->get('stagedImages');
+        $rowKey = array_key_first($rows);
+        $rows[$rowKey]['preview_expires_at'] = now()->addHour()->timestamp;
+
+        $component->set('stagedImages', $rows);
+
+        $this->assertArrayNotHasKey(
+            $rowKey,
+            $component->instance()->render()->getData()['previewUrls'],
+        );
+        $component->assertSee('Temporary preview expired');
     }
 
     public function test_valid_jpeg_and_png_previews_are_streamed_privately_without_side_effects(): void

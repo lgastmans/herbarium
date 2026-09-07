@@ -14,10 +14,12 @@ use App\Services\HerbariumImageStorage\HerbariumImageImportSource;
 use App\Services\HerbariumImageStorage\HerbariumImageStorageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Mockery;
 use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
@@ -356,6 +358,36 @@ class ImportHerbariumImagesBatchImportTest extends TestCase
         $this->assertSame(1, $instance->failedCount);
         $this->assertSame(1, $instance->totalProcessed);
         $this->assertSame([], $instance->stagedImages);
+        $this->assertSame(0, HerbariumImages::count());
+        $this->assertSame(0, Activity::count());
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_unexpected_import_failure_exposes_only_generic_browser_feedback(): void
+    {
+        $this->herbarium('901', 'Butea', 'superba');
+        $component = Livewire::test(ImportHerbariumImages::class);
+        $this->stage($component, UploadedFile::fake()->image('901.jpg', 8, 8));
+        $component->call('analyzePendingRows');
+
+        $storageService = Mockery::mock(HerbariumImageStorageService::class);
+        $storageService->shouldReceive('import')
+            ->once()
+            ->andThrow(new \RuntimeException(
+                'SQLSTATE[HY000] password=secret /home/production/app.php:123',
+            ));
+        $this->app->instance(HerbariumImageStorageService::class, $storageService);
+        Log::spy();
+
+        $component
+            ->call('importBatch')
+            ->assertSet('failedCount', 1)
+            ->assertSee('An unexpected error prevented this image from importing. Please retry.')
+            ->assertDontSee('SQLSTATE')
+            ->assertDontSee('password=secret')
+            ->assertDontSee('/home/production');
+
+        Log::shouldHaveReceived('error')->once();
         $this->assertSame(0, HerbariumImages::count());
         $this->assertSame(0, Activity::count());
         $this->assertSame([], Storage::disk('public')->allFiles());
