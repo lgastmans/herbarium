@@ -14,7 +14,6 @@ use App\Services\HerbariumImageStorage\HerbariumImageStorageService;
 use App\Services\HerbariumImageStorage\HerbariumImageStorageStatus;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
@@ -30,8 +29,6 @@ class ImportHerbariumImages extends Component
     public const MAX_IMAGES = 100;
 
     public const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-    private const PREVIEW_URL_LIFETIME_SECONDS = 10 * 60;
 
     public mixed $incomingFile = null;
 
@@ -94,7 +91,6 @@ class ImportHerbariumImages extends Component
             'key' => $rowKey,
             'original_filename' => $originalFilename,
             'temporary_file' => $file,
-            'preview_expires_at' => now()->addSeconds(self::PREVIEW_URL_LIFETIME_SECONDS)->timestamp,
             'match_status' => 'pending',
             'match_type' => null,
             'candidate_ids' => [],
@@ -525,59 +521,8 @@ class ImportHerbariumImages extends Component
             'unresolvedCount' => $this->unresolvedCount(),
             'remainingCapacity' => $this->remainingCapacity(),
             'canImport' => $this->stagedCount() > 0 && $this->unresolvedCount() === 0,
-            'previewUrls' => $this->temporaryPreviewUrls(),
         ])
             ->layout('layouts.app');
-    }
-
-    /** @return array<string, string> */
-    private function temporaryPreviewUrls(): array
-    {
-        $urls = [];
-
-        foreach ($this->stagedImages as $rowKey => $row) {
-            $temporaryFile = is_array($row) ? ($row['temporary_file'] ?? null) : null;
-            $previewExpiresAt = is_array($row)
-                ? filter_var($row['preview_expires_at'] ?? null, FILTER_VALIDATE_INT)
-                : false;
-
-            if (! is_string($rowKey)
-                || ! Str::isUuid($rowKey)
-                || ! $temporaryFile instanceof TemporaryUploadedFile
-                || $previewExpiresAt === false
-            ) {
-                continue;
-            }
-
-            try {
-                if (! $temporaryFile->exists()) {
-                    continue;
-                }
-
-                $now = now();
-
-                if ($previewExpiresAt <= $now->timestamp
-                    || $previewExpiresAt > $now->timestamp + self::PREVIEW_URL_LIFETIME_SECONDS
-                ) {
-                    continue;
-                }
-
-                $expiresAt = $now->copy()->setTimestamp($previewExpiresAt);
-
-                $urls[$rowKey] = URL::temporarySignedRoute(
-                    'herbarium.images.import.preview',
-                    $expiresAt,
-                    [
-                        'token' => $rowKey,
-                        'filename' => $temporaryFile->getFilename(),
-                    ],
-                );
-            } catch (Throwable) {
-                // Expired temporary uploads retain the existing preview fallback.
-            }
-        }
-
-        return $urls;
     }
 
     private function authorizeImport(): void

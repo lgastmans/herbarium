@@ -154,26 +154,22 @@ remain. Livewire may retain abandoned temporary files until its normal cleanup
 cycle. Successful and duplicate rows leave staging, while retryable failed rows
 remain staged and continue to trigger the warning.
 
-## Signed temporary previews behind a reverse proxy
+## Temporary preview routes behind a reverse proxy
 
-Batch previews remain private files served through the authenticated,
-verified-administrator, signed, extensionless
-`herbarium.images.import.preview` route. The standard signed
-`livewire.preview-file` route remains unchanged. Do not expose
-`storage/app/livewire-tmp`, remove signature checks, or add a public link for
-that directory. Temporary storage lookup uses Livewire's generated temporary
-filename from the signed query, never the client-provided original filename.
+The batch importer intentionally renders filenames and assignment state
+without image thumbnails. It does not generate signed preview URLs, persist
+preview-expiry state, or cause the browser to request each staged image again.
+This avoids one authenticated PHP request plus temporary-file validation and
+streaming work per image. Staging, removal, and final import still use the same
+private Livewire temporary files.
 
-Each staged row receives one fixed expiry timestamp 10 minutes in the future;
-the signed URL itself is never persisted in public Livewire state. The server
-rejects a missing, expired, or more-than-10-minutes-future timestamp instead of
-signing it. Consequently, later staging, selector, and duplicate-indicator
-renders produce the identical `src` for an existing row throughout its preview
-lifetime; Livewire does not assign a new URL and the browser does not download
-every old thumbnail again. A new row still receives its own signed URL. Once
-the row's preview expires, or if the temporary file disappears, a subsequent
-render uses the existing **Temporary preview expired** fallback. Removing a row
-still deletes its temporary file and removes the keyed row and thumbnail.
+The existing authenticated, verified-administrator, signed, extensionless
+`herbarium.images.import.preview` endpoint remains protected for compatibility,
+and the standard signed `livewire.preview-file` route remains unchanged. Do not
+expose `storage/app/livewire-tmp`, remove signature checks, or add a public link
+for that directory. Temporary storage lookup uses Livewire's generated
+temporary filename from the signed query, never the client-provided original
+filename.
 
 The production-style preview failure was caused by a proxy configuration gap:
 the application had no trusted proxy addresses, so Laravel ignored the

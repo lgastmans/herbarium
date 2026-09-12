@@ -220,7 +220,7 @@ class ImportHerbariumImagesStagingTest extends TestCase
         $component->call('removeStagedImage', $keys[0])->assertHasNoErrors();
     }
 
-    public function test_rendered_rows_have_stable_keys_thumbnails_and_protected_async_selectors(): void
+    public function test_rendered_rows_have_stable_keys_filenames_and_protected_async_selectors(): void
     {
         $component = Livewire::test(ImportHerbariumImages::class);
         $this->stage($component, UploadedFile::fake()->image('400.jpg', 8, 8));
@@ -235,7 +235,8 @@ class ImportHerbariumImagesStagingTest extends TestCase
         $component
             ->assertSee('data-row-key="'.$rowKey.'"', false)
             ->assertSee('herbarium-image-row-'.$rowKey, false)
-            ->assertSee('Temporary preview of 400.jpg')
+            ->assertSee('400.jpg')
+            ->assertDontSee('Temporary preview')
             ->assertSee($asyncSelectorData, false)
             ->assertSee('Import assigned images');
     }

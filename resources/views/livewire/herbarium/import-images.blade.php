@@ -308,22 +308,8 @@
                     <article
                         wire:key="herbarium-image-row-{{ $rowKey }}"
                         data-row-key="{{ $rowKey }}"
-                        class="grid gap-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-[10rem_minmax(0,1fr)_minmax(18rem,0.8fr)]"
+                        class="grid gap-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]"
                     >
-                        <div>
-                            @if (isset($previewUrls[$rowKey]))
-                                <img
-                                    src="{{ $previewUrls[$rowKey] }}"
-                                    alt="Temporary preview of {{ $row['original_filename'] }}"
-                                    class="h-40 w-full rounded-lg bg-gray-100 object-contain dark:bg-gray-800"
-                                >
-                            @else
-                                <div class="flex h-40 items-center justify-center rounded-lg bg-gray-100 p-3 text-center text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                                    Temporary preview expired
-                                </div>
-                            @endif
-                        </div>
-
                         <div class="min-w-0 space-y-3">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div class="min-w-0">
