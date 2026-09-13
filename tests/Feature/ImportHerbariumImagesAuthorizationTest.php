@@ -44,7 +44,7 @@ class ImportHerbariumImagesAuthorizationTest extends TestCase
             ->get(route('herbarium.images.import'))
             ->assertOk()
             ->assertSee('Import Herbarium Images')
-            ->assertSee('Add up to 100 JPEG or PNG images');
+            ->assertSee('Add JPEG or PNG images');
     }
 
     public function test_direct_livewire_mount_is_rejected_for_non_administrator(): void

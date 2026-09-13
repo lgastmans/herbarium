@@ -26,8 +26,6 @@ class ImportHerbariumImages extends Component
 {
     use WithFileUploads;
 
-    public const MAX_IMAGES = 100;
-
     public const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
     public mixed $incomingFile = null;
@@ -58,16 +56,10 @@ class ImportHerbariumImages extends Component
         $this->authorizeImport();
     }
 
-    /** @return array{accepted: bool, row_key: string|null, error: string|null, remaining: int, staged_count: int} */
+    /** @return array{accepted: bool, row_key: string|null, error: string|null, staged_count: int} */
     public function stageIncomingUpload(): array
     {
         $this->authorizeImport();
-
-        if (count($this->stagedImages) >= self::MAX_IMAGES) {
-            $this->discardIncomingFile();
-
-            return $this->stagingResponse('This batch already contains the maximum of 100 images.');
-        }
 
         if (! $this->incomingFile instanceof TemporaryUploadedFile) {
             $this->incomingFile = null;
@@ -116,7 +108,6 @@ class ImportHerbariumImages extends Component
             'accepted' => true,
             'row_key' => $rowKey,
             'error' => null,
-            'remaining' => $this->remainingCapacity(),
             'staged_count' => $this->stagedCount(),
         ];
     }
@@ -283,7 +274,7 @@ class ImportHerbariumImages extends Component
         $this->refreshDuplicateIndicatorForSelection($rowKey, $herbarium);
     }
 
-    /** @return array{remaining: int, staged_count: int} */
+    /** @return array{staged_count: int} */
     public function removeStagedImage(string $rowKey): array
     {
         $this->authorizeImport();
@@ -329,13 +320,6 @@ class ImportHerbariumImages extends Component
 
         if ($this->stagedImages === []) {
             $this->rejectBatch('There are no staged images to import.');
-            $this->dispatchStagedBatchState();
-
-            return;
-        }
-
-        if (count($this->stagedImages) > self::MAX_IMAGES) {
-            $this->rejectBatch('A batch cannot contain more than 100 images.');
             $this->dispatchStagedBatchState();
 
             return;
@@ -479,7 +463,6 @@ class ImportHerbariumImages extends Component
         $this->dispatchStagedBatchState();
         $this->dispatch(
             'batch-import-finished',
-            remaining: $this->remainingCapacity(),
             stagedCount: $this->stagedCount(),
         );
     }
@@ -507,11 +490,6 @@ class ImportHerbariumImages extends Component
         return $this->stagedCount() - $this->assignedCount();
     }
 
-    public function remainingCapacity(): int
-    {
-        return max(0, self::MAX_IMAGES - $this->stagedCount());
-    }
-
     #[Title('Import Herbarium Images')]
     public function render()
     {
@@ -519,7 +497,6 @@ class ImportHerbariumImages extends Component
             'stagedCount' => $this->stagedCount(),
             'assignedCount' => $this->assignedCount(),
             'unresolvedCount' => $this->unresolvedCount(),
-            'remainingCapacity' => $this->remainingCapacity(),
             'canImport' => $this->stagedCount() > 0 && $this->unresolvedCount() === 0,
         ])
             ->layout('layouts.app');
@@ -569,7 +546,7 @@ class ImportHerbariumImages extends Component
         return $validImage ? null : 'Only valid JPEG and PNG image content can be staged.';
     }
 
-    /** @return array{accepted: bool, row_key: null, error: string, remaining: int, staged_count: int} */
+    /** @return array{accepted: bool, row_key: null, error: string, staged_count: int} */
     private function stagingResponse(string $error): array
     {
         $this->dispatchStagedBatchState();
@@ -578,16 +555,14 @@ class ImportHerbariumImages extends Component
             'accepted' => false,
             'row_key' => null,
             'error' => $error,
-            'remaining' => $this->remainingCapacity(),
             'staged_count' => $this->stagedCount(),
         ];
     }
 
-    /** @return array{remaining: int, staged_count: int} */
+    /** @return array{staged_count: int} */
     private function batchClientState(): array
     {
         return [
-            'remaining' => $this->remainingCapacity(),
             'staged_count' => $this->stagedCount(),
         ];
     }
@@ -596,7 +571,6 @@ class ImportHerbariumImages extends Component
     {
         $this->dispatch(
             'staged-batch-state-updated',
-            remainingCapacity: $this->remainingCapacity(),
             stagedCount: $this->stagedCount(),
         );
     }

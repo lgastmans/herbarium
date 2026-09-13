@@ -49,7 +49,7 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
         $view = $this->importView();
 
         $this->assertMatchesRegularExpression(
-            '/<div\s+[^>]*x-show="failures\.length > 0"[^>]*x-cloak[^>]*>/s',
+            '/<div\s+[^>]*wire:ignore[^>]*x-show="failures\.length > 0"[^>]*x-cloak[^>]*>/s',
             $view,
         );
         $this->assertStringContainsString('x-on:click="failures = []"', $view);
@@ -77,7 +77,7 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
         $this->assertStringContainsString('x-ref="fileInput"', $input);
         $this->assertStringContainsString('x-on:change="addFiles($event.target.files)"', $input);
         $this->assertStringContainsString(
-            'x-bind:disabled="uploading || waitingBetweenFiles || analyzing || remainingCapacity === 0"',
+            'x-bind:disabled="uploading || waitingBetweenFiles || analyzing"',
             $input,
         );
         $this->assertSame(1, preg_match_all('/<input\s+[^>]*type="file"[^>]*>/s', $view));

@@ -45,7 +45,7 @@ temporary-upload endpoint applies `max:5120` (KiB). The Docker PHP image uses a
 6 MiB `upload_max_filesize` and 7 MiB `post_max_size`, and Nginx uses a 7 MiB
 `client_max_body_size`. The transport values are slightly larger only to admit
 multipart framing around a valid 5 MiB file. They are not batch-size limits:
-the browser sends one image per request, never all 100 images in one request.
+the browser sends one image per request, never the whole selected group in one request.
 
 When deploying without the supplied containers, configure equivalent PHP and
 web-server limits. Do not lower either transport layer to 5 MiB or below, and
@@ -106,8 +106,8 @@ rendered page, or log.
 
 ## Web workflow and permissions
 
-The administrator-only **Import Images** page accepts at most 100 staged JPEG
-or PNG files. The files are uploaded sequentially with exactly one
+The administrator-only **Import Images** page accepts staged JPEG or PNG files
+without an application-level image-count ceiling. The files are uploaded sequentially with exactly one
 `$wire.upload` call per file and a 250 ms pause between completed file
 iterations. There is no delay before the first file, no concurrent upload or
 overlapping pacing timer, no automatic retry, and filename analysis runs once
@@ -117,6 +117,11 @@ synchronously when the administrator confirms the import. Administrators must
 be signed in with a verified email. The single-image uploader remains available
 to verified users under its existing authorization behavior; direct save calls
 still reject guests and unverified users.
+
+The upload-failure list is owned by Alpine and excluded from Livewire DOM
+morphing so staged-row refreshes cannot remove its rendered messages. Collection
+assignment uses the authenticated `ajax.herbaria` search endpoint directly and
+does not depend on WireUI's Alpine component registration.
 
 The pacing timer is not cleared by Alpine's component-destruction hook because
 Livewire may invoke that hook while morphing the component and preserving its

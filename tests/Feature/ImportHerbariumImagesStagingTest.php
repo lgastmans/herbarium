@@ -95,21 +95,21 @@ class ImportHerbariumImagesStagingTest extends TestCase
         $this->assertCount(0, $emptyComponent->get('stagedImages'));
     }
 
-    public function test_server_enforces_the_maximum_of_100_rows(): void
+    public function test_server_can_stage_more_than_100_rows(): void
     {
-        $component = Livewire::test(ImportHerbariumImages::class);
+        $component = Livewire::test(ImportHerbariumImages::class)
+            ->set('incomingFile', UploadedFile::fake()->image('over-100.jpg', 8, 8));
         $instance = $component->instance();
 
-        for ($index = 0; $index < ImportHerbariumImages::MAX_IMAGES; $index++) {
+        for ($index = 0; $index < 100; $index++) {
             $instance->stagedImages['row-'.$index] = ['selected_herbarium_id' => null];
         }
 
         $result = $instance->stageIncomingUpload();
 
-        $this->assertFalse($result['accepted']);
-        $this->assertSame(0, $result['remaining']);
-        $this->assertStringContainsString('maximum of 100', $result['error']);
-        $this->assertCount(ImportHerbariumImages::MAX_IMAGES, $instance->stagedImages);
+        $this->assertTrue($result['accepted']);
+        $this->assertCount(101, $instance->stagedImages);
+        $this->assertSame('over-100.jpg', array_values($instance->stagedImages)[100]['original_filename']);
     }
 
     public function test_analysis_assigns_exact_and_f_fallback_and_leaves_other_statuses_unassigned(): void
@@ -224,20 +224,17 @@ class ImportHerbariumImagesStagingTest extends TestCase
     {
         $component = Livewire::test(ImportHerbariumImages::class);
         $this->stage($component, UploadedFile::fake()->image('400.jpg', 8, 8));
+        $component->call('analyzePendingRows');
         $rowKey = array_key_first($component->get('stagedImages'));
-        $asyncSelectorData = base64_encode(json_encode([
-            'api' => route('ajax.herbaria'),
-            'method' => 'GET',
-            'params' => [],
-            'alwaysFetch' => false,
-        ]));
 
         $component
             ->assertSee('data-row-key="'.$rowKey.'"', false)
             ->assertSee('herbarium-image-row-'.$rowKey, false)
             ->assertSee('400.jpg')
             ->assertDontSee('Temporary preview')
-            ->assertSee($asyncSelectorData, false)
+            ->assertSee('herbarium-collection-'.$rowKey, false)
+            ->assertSee(str_replace('/', '\\/', route('ajax.herbaria')), false)
+            ->assertDontSee('wireui_select', false)
             ->assertSee('Import assigned images');
     }
 

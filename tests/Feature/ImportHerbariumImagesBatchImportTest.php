@@ -39,7 +39,7 @@ class ImportHerbariumImagesBatchImportTest extends TestCase
         $this->actingAs($this->administrator);
     }
 
-    public function test_empty_and_oversized_batches_are_rejected_without_writes(): void
+    public function test_empty_and_large_incomplete_batches_are_rejected_without_writes(): void
     {
         $empty = Livewire::test(ImportHerbariumImages::class)
             ->call('importBatch')
@@ -48,19 +48,20 @@ class ImportHerbariumImagesBatchImportTest extends TestCase
 
         $this->assertStringContainsString('no staged images', $empty->get('batchMessage'));
 
-        $oversized = Livewire::test(ImportHerbariumImages::class)->instance();
+        $large = Livewire::test(ImportHerbariumImages::class)->instance();
 
-        for ($index = 0; $index <= ImportHerbariumImages::MAX_IMAGES; $index++) {
-            $oversized->stagedImages['row-'.$index] = [];
+        for ($index = 0; $index <= 100; $index++) {
+            $large->stagedImages['row-'.$index] = [];
         }
 
-        $oversized->importBatch(
+        $large->importBatch(
             app(\App\Services\HerbariumImageMatching\HerbariumImageMatcher::class),
             app(HerbariumImageStorageService::class),
         );
 
-        $this->assertStringContainsString('more than 100', (string) $oversized->batchMessage);
-        $this->assertSame(0, $oversized->totalProcessed);
+        $this->assertStringContainsString('Every staged image', (string) $large->batchMessage);
+        $this->assertStringNotContainsString('more than 100', (string) $large->batchMessage);
+        $this->assertSame(0, $large->totalProcessed);
         $this->assertSame(0, HerbariumImages::count());
         $this->assertSame(0, Activity::count());
         $this->assertSame([], Storage::disk('public')->allFiles());
@@ -287,7 +288,6 @@ class ImportHerbariumImagesBatchImportTest extends TestCase
             ->call('importBatch')
             ->assertDispatched(
                 'staged-batch-state-updated',
-                remainingCapacity: 99,
                 stagedCount: 1,
             );
 

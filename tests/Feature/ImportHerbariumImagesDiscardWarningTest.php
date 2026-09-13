@@ -46,7 +46,6 @@ class ImportHerbariumImagesDiscardWarningTest extends TestCase
             ->call('stageIncomingUpload')
             ->assertDispatched(
                 'staged-batch-state-updated',
-                remainingCapacity: 99,
                 stagedCount: 1,
             );
 
@@ -56,7 +55,6 @@ class ImportHerbariumImagesDiscardWarningTest extends TestCase
             ->call('removeStagedImage', $rowKey)
             ->assertDispatched(
                 'staged-batch-state-updated',
-                remainingCapacity: 100,
                 stagedCount: 0,
             );
     }
@@ -71,10 +69,9 @@ class ImportHerbariumImagesDiscardWarningTest extends TestCase
             ->call('importBatch')
             ->assertDispatched(
                 'staged-batch-state-updated',
-                remainingCapacity: 100,
                 stagedCount: 0,
             )
-            ->assertDispatched('batch-import-finished', remaining: 100, stagedCount: 0);
+            ->assertDispatched('batch-import-finished', stagedCount: 0);
 
         $this->assertSame([], $successful->get('stagedImages'));
         $this->assertSame($successfulHerbarium->id, \App\Models\HerbariumImages::sole()->herbarium_id);
@@ -92,10 +89,9 @@ class ImportHerbariumImagesDiscardWarningTest extends TestCase
             ->assertSet('failedCount', 1)
             ->assertDispatched(
                 'staged-batch-state-updated',
-                remainingCapacity: 99,
                 stagedCount: 1,
             )
-            ->assertDispatched('batch-import-finished', remaining: 99, stagedCount: 1);
+            ->assertDispatched('batch-import-finished', stagedCount: 1);
 
         $this->assertCount(1, $failed->get('stagedImages'));
         $this->assertNull(array_values($failed->get('selectedHerbaria'))[0]);
