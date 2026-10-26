@@ -22,6 +22,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('access-management', static fn (User $user): bool => $user->hasVerifiedEmail());
+
         Gate::define(
             'import-herbarium-images',
             static fn (User $user): bool => (bool) $user->is_admin,

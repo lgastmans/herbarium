@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ImportHerbariumImages;
+use App\Livewire\Admin\ImportHerbariumImages;
 use App\Models\HerbariumImages;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,7 +50,7 @@ class HerbariumImportTemporaryPreviewTest extends TestCase
             ->assertDontSee('/herbarium/images/import-preview/', escape: false)
             ->assertDontSee('Temporary preview');
 
-        $template = file_get_contents(resource_path('views/livewire/herbarium/import-images.blade.php'));
+        $template = file_get_contents(resource_path('views/admin/livewire/herbarium/import-images.blade.php'));
         $this->assertIsString($template);
         $this->assertStringNotContainsString('<img', $template);
         $this->assertStringNotContainsString('previewUrls', $template);
@@ -91,7 +91,7 @@ class HerbariumImportTemporaryPreviewTest extends TestCase
         [$filename] = $this->putTemporaryFile('specimen.png', $this->imageBytes('png'));
         $token = (string) Str::uuid();
 
-        $this->get(route('herbarium.images.import.preview', [
+        $this->get(route('admin.herbarium.images.import.preview', [
             'token' => $token,
             'filename' => $filename,
         ]))->assertForbidden();
@@ -179,11 +179,11 @@ class HerbariumImportTemporaryPreviewTest extends TestCase
 
     public function test_route_is_constrained_and_standard_livewire_preview_route_is_unchanged(): void
     {
-        $route = Route::getRoutes()->getByName('herbarium.images.import.preview');
+        $route = Route::getRoutes()->getByName('admin.herbarium.images.import.preview');
         $livewireRoute = Route::getRoutes()->getByName('livewire.preview-file');
 
         $this->assertNotNull($route);
-        $this->assertSame('herbarium/images/import-preview/{token}', $route->uri());
+        $this->assertSame('admin/herbarium/images/import-preview/{token}', $route->uri());
         $this->assertSame(
             ['web', 'auth', 'verified', 'admin', 'signed', 'throttle:240,1'],
             $route->gatherMiddleware(),
@@ -224,7 +224,7 @@ class HerbariumImportTemporaryPreviewTest extends TestCase
         mixed $expiresAt = null,
     ): string {
         return URL::temporarySignedRoute(
-            'herbarium.images.import.preview',
+            'admin.herbarium.images.import.preview',
             $expiresAt ?? now()->addMinutes(5),
             [
                 'token' => $token ?? (string) Str::uuid(),

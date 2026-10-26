@@ -8,7 +8,7 @@ class ImportHerbariumImagesSequentialTransportTest extends TestCase
 {
     public function test_view_uses_single_file_livewire_uploads_without_multiple_model_binding(): void
     {
-        $view = file_get_contents(resource_path('views/livewire/herbarium/import-images.blade.php'));
+        $view = file_get_contents(resource_path('views/admin/livewire/herbarium/import-images.blade.php'));
 
         $this->assertIsString($view);
         $this->assertStringContainsString('$wire.upload(', $view);
@@ -28,7 +28,7 @@ class ImportHerbariumImagesSequentialTransportTest extends TestCase
 
     public function test_queue_has_one_guarded_inter_file_timer_and_analyzes_once_after_the_group(): void
     {
-        $view = file_get_contents(resource_path('views/livewire/herbarium/import-images.blade.php'));
+        $view = file_get_contents(resource_path('views/admin/livewire/herbarium/import-images.blade.php'));
 
         $this->assertIsString($view);
         $this->assertStringContainsString('if (!this.uploading) return;', $view);

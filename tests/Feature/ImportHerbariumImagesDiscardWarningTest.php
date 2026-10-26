@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ImportHerbariumImages;
+use App\Livewire\Admin\ImportHerbariumImages;
 use App\Models\Family;
 use App\Models\Genus;
 use App\Models\Herbarium;
@@ -28,7 +28,7 @@ class ImportHerbariumImagesDiscardWarningTest extends TestCase
 
     public function test_rendered_warning_uses_only_a_scalar_staged_count_and_covers_navigation(): void
     {
-        $view = file_get_contents(resource_path('views/livewire/herbarium/import-images.blade.php'));
+        $view = file_get_contents(resource_path('views/admin/livewire/herbarium/import-images.blade.php'));
 
         $this->assertIsString($view);
         $this->assertStringContainsString('stagedCount: @js($stagedCount)', $view);

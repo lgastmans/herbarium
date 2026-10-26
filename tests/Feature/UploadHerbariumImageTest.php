@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Exceptions\HerbariumImageImportException;
-use App\Livewire\UploadHerbariumImage;
+use App\Livewire\Admin\UploadHerbariumImage;
 use App\Models\Family;
 use App\Models\Genus;
 use App\Models\Herbarium;

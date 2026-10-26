@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ImportHerbariumImages;
+use App\Livewire\Admin\ImportHerbariumImages;
 use App\Models\Family;
 use App\Models\Genus;
 use App\Models\Herbarium;

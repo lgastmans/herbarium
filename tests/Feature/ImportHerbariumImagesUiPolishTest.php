@@ -9,7 +9,7 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
 {
     public function test_app_layout_includes_livewire_styles_exactly_once(): void
     {
-        $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $layout = file_get_contents(resource_path('views/admin/layouts/app.blade.php'));
 
         $this->assertIsString($layout);
         $this->assertSame(1, substr_count($layout, '@livewireStyles'));
@@ -18,7 +18,7 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
 
     public function test_wireui_registers_before_the_deferred_livewire_runtime(): void
     {
-        $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $layout = file_get_contents(resource_path('views/admin/layouts/app.blade.php'));
         $provider = file_get_contents(app_path('Providers/AppServiceProvider.php'));
 
         $this->assertIsString($layout);
@@ -91,7 +91,7 @@ class ImportHerbariumImagesUiPolishTest extends TestCase
 
     private function importView(): string
     {
-        $view = file_get_contents(resource_path('views/livewire/herbarium/import-images.blade.php'));
+        $view = file_get_contents(resource_path('views/admin/livewire/herbarium/import-images.blade.php'));
         $this->assertIsString($view);
 
         return $view;

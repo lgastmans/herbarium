@@ -1,137 +1,14 @@
 <?php
-use App\Livewire\CreatePlant;
-use App\Livewire\ImportHerbariumImages;
-use App\Livewire\UpdatePlant;
-use App\Livewire\DeletePlant;
-use App\Livewire\ReplaceGenus;
-use App\Livewire\ReplacePlace;
-use App\Livewire\ReplaceFamily;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\TalukController;
-use App\Http\Controllers\PlaceController;
-use App\Http\Controllers\PlantController;
-use App\Http\Controllers\GenusController;
-use App\Http\Controllers\StateController;
-use App\Http\Controllers\StatusController;
-use App\Http\Controllers\FamilyController;
-use App\Http\Controllers\DistrictController;
-use App\Http\Controllers\SpecificController;
-use App\Http\Controllers\CollectorController;
-use App\Http\Controllers\GenusImageController;
-use App\Http\Controllers\HerbariumImportTemporaryPreviewController;
-use App\Http\Controllers\HerbariumCollectionSearchController;
+
 use Illuminate\Support\Facades\Route;
 
-use App\Livewire\UploadGenusImage;
+require __DIR__.'/public.php';
 
-use App\Models\HerbariumImages;
+Route::prefix('admin')->group(function () {
+    require __DIR__.'/auth.php';
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
+    // Profile is available before verification so users can correct their email.
+    Route::view('profile', 'admin.profile')->middleware('auth')->name('admin.profile');
 
-Route::view('/', 'welcome');
-
-
-Route::get('plants', [PlantController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('plants');
-Route::get('/plants/create', CreatePlant::class)->name('plants.create');
-Route::get('/plants/update/{herbarium}', UpdatePlant::class)->name('plants.update');
-
-Route::get('/plants/replace-genus', ReplaceGenus::class)->name('genus.replace');
-Route::get('/plants/replace-family', ReplaceFamily::class)->name('family.replace');
-Route::get('/plants/replace-place', ReplacePlace::class)->name('place.replace');
-
-Route::get('/herbarium/images/import', ImportHerbariumImages::class)
-    ->middleware(['auth', 'verified', 'admin'])
-    ->name('herbarium.images.import');
-
-Route::get('/herbarium/images/import-preview/{token}', HerbariumImportTemporaryPreviewController::class)
-    ->whereUuid('token')
-    ->middleware(['auth', 'verified', 'admin', 'signed', 'throttle:240,1'])
-    ->name('herbarium.images.import.preview');
-
-
-Route::get('/families', [FamilyController::class, 'index'])->name('families');
-Route::get('/genus', [GenusController::class, 'index'])->name('genus');
-Route::get('/places', [PlaceController::class, 'index'])->name('places');
-Route::get('/taluks', [TalukController::class, 'index'])->name('taluks');
-Route::get('/districts', [DistrictController::class, 'index'])->name('districts');
-Route::get('/states', [StateController::class, 'index'])->name('states');
-Route::get('/specifics', [SpecificController::class, 'index'])->name('specifics');
-Route::get('/statuses', [StatusController::class, 'index'])->name('statuses');
-Route::get('/collectors', [CollectorController::class, 'index'])->name('collectors');
-
-Route::get('/herbarium-label/{id}', [GenusController::class, 'generateLabel'])->name('herbarium-label');
-Route::get('/herbarium-label/{id}/view', [GenusController::class, 'generateLabelView'])->name('herbarium-label-view');
-
-
-
-Route::get('/herbarium/image/{image}', function (HerbariumImages $image) {
-
-    $image->load('herbarium.genus');
-
-    $images = HerbariumImages::where('herbarium_id', $image->herbarium_id)
-        ->orderBy('id')
-        ->get();
-
-    $currentIndex = $images->search(fn ($img) => $img->id === $image->id) + 1;
-    $total = $images->count();
-
-    $previous = $images->firstWhere('id', '<', $image->id);
-    $next = $images->firstWhere('id', '>', $image->id);
-
-    return view('herbarium.image-viewer', [
-        'image'        => $image,
-        'previous'     => $previous,
-        'next'         => $next,
-        'currentIndex' => $currentIndex,
-        'total'        => $total,
-    ]);
-
-})->name('herbarium.image.view');
-
-
-
-
-Route::get('/genus-images', [GenusImageController::class, 'index']);
-Route::post('/genus-images', [GenusImageController::class, 'store']);
-Route::get('/upload-genus-image', UploadGenusImage::class);
-
-Route::get('users', [UserController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('users');
-
-
-Route::prefix('ajax')->group(function () {
-    Route::get('/herbaria', HerbariumCollectionSearchController::class)
-        ->middleware(['auth', 'verified', 'admin', 'throttle:120,1'])
-        ->name('ajax.herbaria');
-    Route::get('/genus', [GenusController::class, 'getListForSelect'])->name('ajax.genus');
-    Route::get('/families', [FamilyController::class, 'getListForSelect'])->name('ajax.families');
-    Route::get('/places', [PlaceController::class, 'getListForSelect'])->name('ajax.places');
-    Route::get('/taluks', [TalukController::class, 'getListForSelect'])->name('ajax.taluks');
-    Route::get('/districts', [DistrictController::class, 'getListForSelect'])->name('ajax.districts');
-    Route::get('/states', [StateController::class, 'getListForSelect'])->name('ajax.states');
-    Route::get('/specifics', [SpecificController::class, 'getListForSelect'])->name('ajax.specifics');
-    Route::get('/statuses', [StatusController::class, 'getListForSelect'])->name('ajax.statuses');
-    Route::get('/collectors', [CollectorController::class, 'getListForSelect'])->name('ajax.collectors');
+    Route::middleware(['auth', 'verified'])->name('admin.')->group(__DIR__.'/admin.php');
 });
-
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
-
-require __DIR__.'/auth.php';

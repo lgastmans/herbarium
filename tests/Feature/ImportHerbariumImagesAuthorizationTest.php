@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ImportHerbariumImages;
+use App\Livewire\Admin\ImportHerbariumImages;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -14,7 +14,7 @@ class ImportHerbariumImagesAuthorizationTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $this->get(route('herbarium.images.import'))
+        $this->get(route('admin.herbarium.images.import'))
             ->assertRedirect(route('login'));
     }
 
@@ -23,7 +23,7 @@ class ImportHerbariumImagesAuthorizationTest extends TestCase
         $user = User::factory()->admin()->unverified()->create();
 
         $this->actingAs($user)
-            ->get(route('herbarium.images.import'))
+            ->get(route('admin.herbarium.images.import'))
             ->assertRedirect(route('verification.notice'));
     }
 
@@ -32,7 +32,7 @@ class ImportHerbariumImagesAuthorizationTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get(route('herbarium.images.import'))
+            ->get(route('admin.herbarium.images.import'))
             ->assertForbidden();
     }
 
@@ -41,7 +41,7 @@ class ImportHerbariumImagesAuthorizationTest extends TestCase
         $user = User::factory()->admin()->create();
 
         $this->actingAs($user)
-            ->get(route('herbarium.images.import'))
+            ->get(route('admin.herbarium.images.import'))
             ->assertOk()
             ->assertSee('Import Herbarium Images')
             ->assertSee('Add JPEG or PNG images');

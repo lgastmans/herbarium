@@ -16,21 +16,21 @@ class HerbariumCollectionSearchTest extends TestCase
 
     public function test_guest_json_request_is_unauthorized(): void
     {
-        $this->getJson(route('ajax.herbaria', ['search' => '123']))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => '123']))
             ->assertUnauthorized();
     }
 
     public function test_unverified_administrator_is_rejected(): void
     {
         $this->actingAs(User::factory()->admin()->unverified()->create())
-            ->getJson(route('ajax.herbaria', ['search' => '123']))
+            ->getJson(route('admin.ajax.herbaria', ['search' => '123']))
             ->assertForbidden();
     }
 
     public function test_verified_non_administrator_is_forbidden(): void
     {
         $this->actingAs(User::factory()->create())
-            ->getJson(route('ajax.herbaria', ['search' => '123']))
+            ->getJson(route('admin.ajax.herbaria', ['search' => '123']))
             ->assertForbidden();
     }
 
@@ -39,7 +39,7 @@ class HerbariumCollectionSearchTest extends TestCase
         $herbarium = $this->herbarium('123', 'Acacia', 'nilotica');
         $this->actingAs(User::factory()->admin()->create());
 
-        $response = $this->getJson(route('ajax.herbaria', ['search' => '123']))
+        $response = $this->getJson(route('admin.ajax.herbaria', ['search' => '123']))
             ->assertOk()
             ->assertJsonCount(1);
 
@@ -70,14 +70,14 @@ class HerbariumCollectionSearchTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
 
         foreach (['123', '00123'] as $search) {
-            $this->getJson(route('ajax.herbaria', ['search' => $search]))
+            $this->getJson(route('admin.ajax.herbaria', ['search' => $search]))
                 ->assertOk()
                 ->assertJsonFragment(['id' => $numeric->id])
                 ->assertJsonMissing(['id' => $prefixed->id]);
         }
 
         foreach (['F123', 'F 123', 'f 00123'] as $search) {
-            $this->getJson(route('ajax.herbaria', ['search' => $search]))
+            $this->getJson(route('admin.ajax.herbaria', ['search' => $search]))
                 ->assertOk()
                 ->assertJsonFragment(['id' => $prefixed->id])
                 ->assertJsonMissing(['id' => $numeric->id]);
@@ -89,7 +89,7 @@ class HerbariumCollectionSearchTest extends TestCase
         $this->herbarium('124', 'Ficus');
         $this->actingAs(User::factory()->admin()->create());
 
-        $this->getJson(route('ajax.herbaria', ['search' => '124']))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => '124']))
             ->assertOk()
             ->assertExactJson([[
                 'id' => Herbarium::query()->value('id'),
@@ -107,12 +107,12 @@ class HerbariumCollectionSearchTest extends TestCase
         $second = $this->herbarium('100', 'Ficus');
         $this->actingAs(User::factory()->admin()->create());
 
-        $this->getJson(route('ajax.herbaria', ['selected' => $first->id]))
+        $this->getJson(route('admin.ajax.herbaria', ['selected' => $first->id]))
             ->assertOk()
             ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $first->id]);
 
-        $response = $this->getJson(route('ajax.herbaria', [
+        $response = $this->getJson(route('admin.ajax.herbaria', [
             'selected' => [$first->id, $second->id],
         ]))->assertOk()->assertJsonCount(2);
 
@@ -124,10 +124,10 @@ class HerbariumCollectionSearchTest extends TestCase
         $this->herbarium('300', 'Ficus');
         $this->actingAs(User::factory()->admin()->create());
 
-        $this->getJson(route('ajax.herbaria'))
+        $this->getJson(route('admin.ajax.herbaria'))
             ->assertOk()
             ->assertExactJson([]);
-        $this->getJson(route('ajax.herbaria', ['search' => '   ']))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => '   ']))
             ->assertOk()
             ->assertExactJson([]);
     }
@@ -139,7 +139,7 @@ class HerbariumCollectionSearchTest extends TestCase
         }
 
         $this->actingAs(User::factory()->admin()->create());
-        $response = $this->getJson(route('ajax.herbaria', ['search' => '1']))
+        $response = $this->getJson(route('admin.ajax.herbaria', ['search' => '1']))
             ->assertOk()
             ->assertJsonCount(25);
 
@@ -161,11 +161,11 @@ class HerbariumCollectionSearchTest extends TestCase
         }
 
         $this->actingAs(User::factory()->admin()->create());
-        $this->getJson(route('ajax.herbaria', ['selected' => $ids]))
+        $this->getJson(route('admin.ajax.herbaria', ['selected' => $ids]))
             ->assertOk()
             ->assertJsonCount(30);
 
-        $this->getJson(route('ajax.herbaria', ['selected' => range(1, 51)]))
+        $this->getJson(route('admin.ajax.herbaria', ['selected' => range(1, 51)]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('selected');
     }
@@ -174,16 +174,16 @@ class HerbariumCollectionSearchTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create());
 
-        $this->getJson(route('ajax.herbaria', ['search' => str_repeat('1', 33)]))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => str_repeat('1', 33)]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('search');
-        $this->getJson(route('ajax.herbaria', ['search' => ['123']]))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => ['123']]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('search');
-        $this->getJson(route('ajax.herbaria', ['search' => '%']))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => '%']))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('search');
-        $this->getJson(route('ajax.herbaria', ['search' => '_']))
+        $this->getJson(route('admin.ajax.herbaria', ['search' => '_']))
             ->assertUnprocessable()
             ->assertJsonValidationErrors('search');
     }

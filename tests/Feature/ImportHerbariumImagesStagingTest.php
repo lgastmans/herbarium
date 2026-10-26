@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ImportHerbariumImages;
+use App\Livewire\Admin\ImportHerbariumImages;
 use App\Models\Family;
 use App\Models\Genus;
 use App\Models\Herbarium;
@@ -233,7 +233,7 @@ class ImportHerbariumImagesStagingTest extends TestCase
             ->assertSee('400.jpg')
             ->assertDontSee('Temporary preview')
             ->assertSee('herbarium-collection-'.$rowKey, false)
-            ->assertSee(str_replace('/', '\\/', route('ajax.herbaria')), false)
+            ->assertSee(str_replace('/', '\\/', route('admin.ajax.herbaria')), false)
             ->assertDontSee('wireui_select', false)
             ->assertSee('Import assigned images');
     }

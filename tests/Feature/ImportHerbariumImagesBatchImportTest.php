@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\ImportHerbariumImages;
+use App\Livewire\Admin\ImportHerbariumImages;
 use App\Models\Family;
 use App\Models\Genus;
 use App\Models\Herbarium;
@@ -424,7 +424,7 @@ class ImportHerbariumImagesBatchImportTest extends TestCase
         $component->set('selectedHerbaria.'.$rowKey, $herbarium->id);
         $this->assertImportButtonEnabled($component->html());
 
-        $view = file_get_contents(resource_path('views/livewire/herbarium/import-images.blade.php'));
+        $view = file_get_contents(resource_path('views/admin/livewire/herbarium/import-images.blade.php'));
         $this->assertIsString($view);
         $this->assertStringContainsString('wire:click="importBatch"', $view);
         $this->assertStringContainsString('wire:confirm=', $view);
