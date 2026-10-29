@@ -33,5 +33,6 @@
             </span>
         </footer>
 
+        @livewireScriptConfig
     </body>
 </html>
