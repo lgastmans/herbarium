@@ -1,3 +1,134 @@
+@import './herbarium.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Laravel integration. The supplied screenshot stylesheet stays in herbarium.css. */
+.herbarium {
+    --serif: 'Libre Caslon Text', Georgia, serif;
+}
+
+/* Tailwind's container max-width must not constrain the reference layout. */
+.herbarium .container { max-width: none; }
+.herbarium .hero-specimen { min-width: 0; }
+.herbarium .hero-image { aspect-ratio: 3 / 4; }
+.herbarium .collection-photo { width: 100%; height: 100%; object-fit: contain; }
+.herbarium .specimen-card__name { font-size: 18px; line-height: 1.35; }
+.herbarium .card-metadata { font-size: 14px; gap: 5px; margin-top: 10px; }
+.herbarium .card-metadata > div { display: flex; align-items: flex-start; gap: 8px; }
+.herbarium .card-metadata dt { flex-shrink: 0; }
+.herbarium .card-metadata dd { min-width: 0; overflow-wrap: anywhere; }
+.herbarium .card-metadata .icon { width: 16px; height: 18px; }
+.herbarium .image-unavailable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 100%;
+    min-height: 120px;
+    padding: 12px;
+    color: var(--muted);
+    background: var(--panel);
+    text-align: center;
+    font-size: 14px;
+}
+.herbarium .image-unavailable .icon { width: 32px; height: 38px; opacity: .5; }
+.herbarium .locality-visual {
+    aspect-ratio: 2 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+}
+.herbarium .locality-visual .icon { width: 42px; height: 48px; opacity: .55; }
+
+/* Editorial pages and the existing catalogue, pending the Explore grid phase. */
+.herbarium .page-content { padding-block: 36px 70px; min-height: 70vh; }
+.herbarium .page-heading { margin-bottom: 30px; }
+.herbarium .page-heading > p:last-child { margin-top: 12px; }
+.herbarium .eyebrow { font-size: 16px; color: var(--muted); margin-bottom: 10px; }
+.herbarium .editorial-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 50px; padding-top: 30px; border-top: 1px solid var(--rule); }
+.herbarium .prose-copy { max-width: 700px; }
+.herbarium .prose-copy p + p { margin-top: 18px; }
+.herbarium .prose-copy h2 { margin-bottom: 14px; }
+.herbarium .prose-copy .text-link { margin-top: 22px; }
+.herbarium .location-line { margin-top: 14px; }
+.herbarium .catalogue-search { max-width: 700px; margin-bottom: 25px; }
+.herbarium .catalogue-search label { display: block; font-size: 16px; color: var(--muted); margin-bottom: 10px; }
+.herbarium .catalogue-search input { width: 100%; background: transparent; border: 1px solid var(--rule); padding: 12px; border-radius: 3px; }
+.herbarium .catalogue-search input:focus { border-color: var(--accent); --tw-ring-color: var(--accent); }
+.herbarium .catalogue-table { overflow-x: auto; border-block: 1px solid var(--rule); }
+.herbarium .catalogue-table table { width: 100%; min-width: 680px; font-size: 16px; text-align: left; }
+.herbarium .catalogue-table th { background: var(--panel); font-weight: 400; color: var(--heading); }
+.herbarium .catalogue-table td, .herbarium .catalogue-table th { padding: 16px; }
+.herbarium .catalogue-table tr + tr { border-top: 1px solid var(--rule); }
+.herbarium .catalogue-table .botanical-name { font-style: italic; }
+.herbarium .catalogue-table .empty-result { text-align: center; padding: 40px 15px; }
+.herbarium .catalogue-pagination { margin-top: 24px; }
+
+@media (max-width: 899px) {
+    .herbarium .editorial-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+@media (max-width: 599px) {
+    .herbarium .specimen-card__name { font-size: 18px; }
+}
+
+/* Explore: filters, results and pagination */
+.herbarium [hidden] { display: none !important; }
+.herbarium .filter-section h3 label { font: inherit; }
+.herbarium .browse-options a .icon { width: 16px; height: 16px; }
+.herbarium .filters .search-field input { border: 0; box-shadow: none; padding: 0; background: transparent; }
+.herbarium .filters .search-field input:focus { box-shadow: none; }
+.herbarium .filter-options select,
+.herbarium .results-toolbar select {
+    width: 100%;
+    background-color: var(--white);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 8px 32px 8px 10px;
+    font-size: 16px;
+    color: var(--text);
+}
+.herbarium .results-toolbar select { width: auto; background-color: transparent; }
+.herbarium .filter-options select:focus,
+.herbarium .results-toolbar select:focus { border-color: var(--accent); --tw-ring-color: var(--accent); }
+.herbarium .clear-filters { background: none; border: 0; padding: 4px 0; font-size: 16px; }
+.herbarium .alphabet a { color: var(--text); }
+.herbarium .empty-message { padding-block: 40px; color: var(--muted); }
+.herbarium .specimen-card > a { display: block; }
+.herbarium .specimen-card:hover .specimen-card__image,
+.herbarium .specimen-card > a:focus-visible .specimen-card__image { border-color: var(--accent); }
+.herbarium .results-heading p { font-size: 20px; color: var(--muted); }
+.herbarium .pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; font-size: 16px; }
+.herbarium .pagination > * { min-width: 40px; min-height: 40px; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; background: none; border-radius: 3px; }
+.herbarium .pagination button:hover { border-color: var(--rule); color: var(--accent); }
+.herbarium .pagination [aria-current="page"] { border-color: var(--accent); color: var(--accent); }
+.herbarium .pagination [aria-disabled="true"] { color: var(--muted); opacity: .5; }
+
+/* Specimen page */
+.herbarium .record-media { min-width: 0; }
+.herbarium .record-content { min-width: 0; }
+.herbarium .image-viewer__stage { max-height: 80vh; }
+.herbarium .image-viewer__stage img { height: auto; }
+.herbarium .image-viewer__stage .specimen-card__image { border: 0; }
+.herbarium .image-viewer:fullscreen { background: var(--paper); display: flex; flex-direction: column; }
+.herbarium .image-viewer:fullscreen .image-viewer__stage { flex: 1; max-height: none; }
+.herbarium .image-toolbar .icon { width: 18px; height: 18px; }
+.herbarium .zoom-controls button { display: inline-flex; align-items: center; justify-content: center; }
+.herbarium .image-thumbs { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 8px 16px; border-top: 1px solid var(--rule); }
+.herbarium .image-thumbs a { display: block; border: 1px solid var(--rule); background: var(--white); }
+.herbarium .image-thumbs a[aria-current="true"] { border: 2px solid var(--accent); }
+.herbarium .image-thumbs img { width: 48px; height: 64px; object-fit: contain; }
+.herbarium .record-navigation .icon { width: 18px; height: 18px; }
+.herbarium .record-title .scientific-name { font-style: italic; }
+.herbarium .record-title .authorship { display: block; margin-top: 8px; font-size: 22px; color: var(--text); letter-spacing: 0; }
+.herbarium .summary-row .icon { margin-top: 2px; }
+.herbarium .record-fields dd { white-space: normal; }
+.herbarium .related-card__image { width: 48%; aspect-ratio: 2 / 3; flex: none; }
+.herbarium .related-card__image .image-unavailable { min-height: 0; font-size: 10px; padding: 4px; }
+.herbarium .related-card__image .image-unavailable .icon { display: none; }
+.herbarium .related-card[aria-current="true"] .related-card__image { border: 2px solid var(--accent); }
+.herbarium .related-card .authorship { display: block; }
+.herbarium .record-section h2 { margin-top: 0; }

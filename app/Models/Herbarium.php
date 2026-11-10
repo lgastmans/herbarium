@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class Herbarium extends Model
@@ -20,6 +23,21 @@ class Herbarium extends Model
         'family_id','place_id','taluk_id','district_id','state_id','genus_id','status_id','collector1_id','collector2_id','collector3_id','collector4_id','specific_id','collection_number','herbarium_number','vernacular_name','quantity_main','quantity_duplicate','quantity_lent','notes','collected_on','latitude','longitude','altitude','habit','description','association','frequency','micro_habitat','leaf','phenology','flower','fruit','seeds','forest'
     ];
 
+
+    /**
+     * Ids of the first record of every collection number, for the public site,
+     * which lists one entry per collection rather than one per physical record.
+     */
+    public static function firstRecordIds(): QueryBuilder
+    {
+        // MIN(id) per group has no query builder method that works as a subquery.
+        return DB::table('herbarium')->selectRaw('MIN(id)')->groupBy('collection_number');
+    }
+
+    public function scopeOnePerCollection(Builder $query): Builder
+    {
+        return $query->whereIn('herbarium.id', static::firstRecordIds());
+    }
 
     public function images(): HasMany
     {
