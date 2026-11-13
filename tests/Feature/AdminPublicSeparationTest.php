@@ -34,7 +34,7 @@ class AdminPublicSeparationTest extends TestCase
                 $this->actingAs($user);
             }
 
-            $this->get(route('public.home'))->assertOk()
+            $this->get(route('public.explore'))->assertOk()
                 ->assertSee('PUBLIC-123')->assertSeeLivewire(Catalogue::class)
                 ->assertDontSeeLivewire(\App\Livewire\Admin\HerbariumTable::class)
                 ->assertDontSee('Add plant')->assertDontSee('openModal');

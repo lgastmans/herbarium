@@ -4,18 +4,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Auroville Dry Herbarium</title>
-    @vite(['resources/css/public.css'])
+    <meta name="description" content="@yield('description', 'Discover the botanical collections of Auroville Dry Herbarium, Auroville, Tamil Nadu, India.')">
+    <title>@hasSection('title')@yield('title') · @endif Auroville Dry Herbarium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    @vite(['resources/css/public.css', 'resources/js/public.js'])
     @livewireStyles
 </head>
-<body class="bg-stone-50 text-stone-900 antialiased">
-    <header class="border-b border-stone-200">
-        <nav class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
-            <a href="{{ route('public.home') }}" class="text-2xl font-serif">Auroville Dry Herbarium</a>
-            <a href="{{ route('admin.dashboard') }}" class="text-sm underline">Administration</a>
-        </nav>
-    </header>
-    <main class="mx-auto max-w-7xl px-6 py-10">@yield('content')</main>
+<body class="herbarium @yield('page-class', 'page-editorial')">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    @include('public.partials.header')
+    <main id="main-content" tabindex="-1">@yield('content')</main>
+    @include('public.partials.footer')
     @livewireScripts
 </body>
 </html>

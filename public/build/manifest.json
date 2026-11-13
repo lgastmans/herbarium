@@ -1,11 +1,11 @@
 {
   "resources/css/admin.css": {
-    "file": "assets/admin-CG76lU-S.css",
+    "file": "assets/admin-loT7_lOJ.css",
     "src": "resources/css/admin.css",
     "isEntry": true
   },
   "resources/css/public.css": {
-    "file": "assets/public-DDSL0F4N.css",
+    "file": "assets/public-C5k_mNPe.css",
     "src": "resources/css/public.css",
     "isEntry": true
   },
@@ -17,5 +17,11 @@
     "css": [
       "assets/admin-ehFyFt0y.css"
     ]
+  },
+  "resources/js/public.js": {
+    "file": "assets/public-DxukGThG.js",
+    "name": "public",
+    "src": "resources/js/public.js",
+    "isEntry": true
   }
 }
