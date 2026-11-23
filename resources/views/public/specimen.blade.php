@@ -63,7 +63,7 @@
         <div class="record-layout">
             <div class="record-media">
                 <div class="image-viewer" data-image-viewer>
-                    <div class="image-viewer__stage">
+                    <div class="image-viewer__stage" data-viewer-stage>
                         @if ($image)
                             <img src="{{ $image->url }}" alt="Herbarium sheet of {{ strip_tags($name) }}, collection {{ $specimen->collection_number }}" data-viewer-image width="600" height="800">
                         @else
@@ -72,11 +72,7 @@
                     </div>
                     @if ($image)
                         <div class="image-toolbar">
-                            <div class="zoom-controls" role="group" aria-label="Zoom" hidden data-viewer-zoom>
-                                <button type="button" data-zoom="out" aria-label="Zoom out">@include('public.partials.icon', ['icon' => 'minus'])</button>
-                                <button type="button" data-zoom="fit">Fit</button>
-                                <button type="button" data-zoom="in" aria-label="Zoom in">@include('public.partials.icon', ['icon' => 'plus'])</button>
-                            </div>
+                            <button class="button" type="button" hidden aria-pressed="false" data-viewer-zoom>@include('public.partials.icon', ['icon' => 'search']) <span>Zoom</span></button>
                             <a class="button" href="{{ $image->url }}" download data-viewer-download>@include('public.partials.icon', ['icon' => 'download']) Download image</a>
                             <button class="button" type="button" hidden data-fullscreen>@include('public.partials.icon', ['icon' => 'fullscreen']) Fullscreen</button>
                         </div>
@@ -96,7 +92,7 @@
                         @foreach ($strip as $related)
                             <a class="related-card" href="{{ route('public.specimen', $related->collection_number) }}" @if ($related->is($specimen)) aria-current="true" @endif>
                                 @include('public.partials.collection-image', ['collection' => $related, 'imageClass' => 'related-card__image'])
-                                <span><small>Collection {{ $related->collection_number }}</small><x-public.botanical-name :name="$related->genus?->name" /></span>
+                                <span><small>{{ $related->collection_number }}</small><x-public.botanical-name :name="$related->genus?->name" /></span>
                             </a>
                         @endforeach
                     </div>

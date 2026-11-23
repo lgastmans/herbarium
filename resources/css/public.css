@@ -129,9 +129,6 @@
 .herbarium .record-title .authorship { display: block; margin-top: 8px; font-size: 22px; color: var(--text); letter-spacing: 0; }
 .herbarium .summary-row .icon { margin-top: 2px; }
 .herbarium .record-fields dd { white-space: normal; }
-.herbarium .related-card__image { width: 48%; aspect-ratio: 2 / 3; flex: none; }
-.herbarium .related-card__image .image-unavailable { min-height: 0; font-size: 10px; padding: 4px; }
-.herbarium .related-card__image .image-unavailable .icon { display: none; }
 .herbarium .related-card[aria-current="true"] .related-card__image { border: 2px solid var(--accent); }
 .herbarium .related-card .authorship { display: block; }
 .herbarium .record-section h2 { margin-top: 0; }
@@ -209,4 +206,39 @@
     .herbarium .contact-lookup .search-field { flex-basis: 100%; }
     .herbarium .stats-strip > div { padding: 16px 4px; }
     .herbarium .stats-strip dt { font-size: 12px; }
+}
+
+/* Specimen viewer: hover loupe, side pane, click-and-drag zoom */
+.herbarium .record-media { position: relative; }
+.herbarium .image-viewer__stage { position: relative; }
+.herbarium .image-viewer__stage[data-viewer-stage] img { transform-origin: 0 0; user-select: none; -webkit-user-drag: none; }
+.herbarium .image-viewer__stage[data-viewer-stage]:not(.is-zoomed) img { cursor: zoom-in; }
+.herbarium .image-viewer__stage.is-zoomed { overflow: hidden; cursor: grab; touch-action: none; }
+.herbarium .image-viewer__stage.is-zoomed:active { cursor: grabbing; }
+.herbarium .image-viewer__stage.is-zoomed img { max-width: none; max-height: none; will-change: transform; }
+.herbarium .image-lens { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: rgb(147 76 27 / .12); }
+.herbarium .image-pane {
+    position: absolute; z-index: 30; pointer-events: none; background: var(--white) no-repeat;
+    border: 1px solid var(--rule); border-radius: 3px; box-shadow: 0 12px 32px rgb(0 0 0 / .18);
+}
+.herbarium .image-pane[hidden] { display: none; }
+.herbarium .image-toolbar [aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--white); }
+.herbarium .image-toolbar [aria-pressed="true"] .icon { color: var(--white); }
+
+/* Continue browsing: even, vertical cards */
+.herbarium .continue-browsing { padding: 20px 22px 22px; background: var(--white); border-radius: 4px; margin-top: 24px; }
+.herbarium .continue-browsing h2 { font-size: 24px; margin-bottom: 16px; }
+.herbarium .related-strip { gap: 16px; }
+.herbarium .related-card { display: block; font-size: 15px; line-height: 1.3; }
+.herbarium .related-card__image { width: 100%; aspect-ratio: 3 / 4; background: var(--paper); border: 1px solid var(--rule); overflow: hidden; transition: border-color .15s; }
+.herbarium .related-card:hover .related-card__image { border-color: var(--accent); }
+.herbarium .related-card .collection-photo { width: 100%; height: 100%; object-fit: contain; }
+.herbarium .related-card__image .image-unavailable { min-height: 0; height: 100%; font-size: 0; padding: 0; background: var(--panel); }
+.herbarium .related-card__image .image-unavailable .icon { display: block; width: 28px; height: 32px; }
+.herbarium .related-card > span { display: block; margin-top: 10px; }
+.herbarium .related-card small { font: 13px/1.3 var(--sans); color: var(--muted); display: block; margin-bottom: 2px; }
+.herbarium .related-card[aria-current="true"] .related-card__image { border: 2px solid var(--accent); }
+.herbarium .related-card[aria-current="true"] small { color: var(--accent); }
+@media (max-width: 599px) {
+    .herbarium .related-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
