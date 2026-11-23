@@ -4,13 +4,16 @@
     $dateFormat = fn ($date) => $date ? \Carbon\Carbon::parse($date)->format('d M Y') : null;
     $image = $images->first();
     $name = $specimen->genus?->name ?: 'Botanical name not recorded';
-    $fields = fn (array $rows) => array_filter($rows, fn ($value) => filled($value));
+    // A value counts as "nothing" when blank or a known import placeholder (e.g. "name1", "-", "N/A").
+    $placeholders = ['name1', '-', '--', 'n/a', 'na', 'nil', 'null'];
+    $present = fn ($value) => is_scalar($value) && filled($value) && ! in_array(strtolower(trim((string) $value)), $placeholders, true);
+    $fields = fn (array $rows) => array_filter($rows, $present);
     // Link to the Explore page with the matching filter applied.
     $explore = fn (string $filter, $value) => route('public.explore', [$filter => $value]);
     $year = $specimen->collected_on ? \Carbon\Carbon::parse($specimen->collected_on)->format('Y') : null;
     $links = [
         'Place' => $specimen->place_id ? $explore('place', $specimen->place_id) : null,
-        'District' => $specimen->district_id ? $explore('district', $specimen->district_id) : null,
+        'District' => $specimen->district_id && $present($specimen->district?->name) ? $explore('district', $specimen->district_id) : null,
     ];
 
     $details = $fields([
@@ -107,7 +110,7 @@
             <article class="record-content">
                 <p class="record-eyebrow">Collection {{ $specimen->collection_number }}</p>
                 <h1 class="record-title"><x-public.botanical-name :name="$specimen->genus?->name" /></h1>
-                @if (filled($specimen->vernacular_name))
+                @if ($present($specimen->vernacular_name))
                     <p class="vernacular">{{ $specimen->vernacular_name }}</p>
                 @endif
 
@@ -118,7 +121,7 @@
                         ['calendar', 'Collected', $dateFormat($specimen->collected_on), $year ? $explore('year', $year) : null],
                         ['person', 'Collectors', $collectors, null],
                     ] as [$icon, $label, $value, $href])
-                        @if (filled($value))
+                        @if (is_countable($value) ? count($value) > 0 : $present($value))
                             <div class="summary-row">@include('public.partials.icon', ['icon' => $icon])<dt>{{ $label }}</dt><dd>
                                 @if ($label === 'Collectors')
                                     @foreach ($value as $id => $collectorName)
