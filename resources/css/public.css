@@ -242,3 +242,24 @@
 @media (max-width: 599px) {
     .herbarium .related-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Controls float on the image so they are always in view */
+.herbarium .image-frame { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.herbarium .image-controls { position: absolute; top: 12px; right: 12px; z-index: 5; display: flex; gap: 8px; }
+.herbarium .image-control {
+    display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+    background: rgb(255 255 255 / .92); border: 1px solid var(--rule); border-radius: 3px; color: var(--heading);
+    box-shadow: 0 2px 8px rgb(0 0 0 / .12); backdrop-filter: blur(4px);
+}
+.herbarium .image-control:hover { border-color: var(--accent); color: var(--accent); }
+.herbarium .image-control[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--white); }
+.herbarium .image-control .icon { width: 20px; height: 20px; color: currentColor; }
+.herbarium .image-hint {
+    position: absolute; left: 12px; bottom: 12px; z-index: 5; pointer-events: none; margin: 0;
+    padding: 4px 10px; font: 13px/1.4 var(--sans); color: var(--muted);
+    background: rgb(255 255 255 / .85); border-radius: 3px;
+}
+.herbarium .image-viewer:has(.is-zoomed) .image-hint { display: none; }
+.herbarium .image-viewer:fullscreen .image-frame { flex: 1; }
+.herbarium .image-viewer:fullscreen .image-viewer__stage { flex: 1; }
+@media (hover: none) { .herbarium .image-hint { display: none; } }

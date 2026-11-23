@@ -63,19 +63,24 @@
         <div class="record-layout">
             <div class="record-media">
                 <div class="image-viewer" data-image-viewer>
-                    <div class="image-viewer__stage" data-viewer-stage>
+                    <div class="image-frame">
+                        <div class="image-viewer__stage" data-viewer-stage>
+                            @if ($image)
+                                <img src="{{ $image->url }}" alt="Herbarium sheet of {{ strip_tags($name) }}, collection {{ $specimen->collection_number }}" data-viewer-image width="600" height="800">
+                            @else
+                                @include('public.partials.collection-image', ['collection' => $specimen, 'imageClass' => 'specimen-card__image'])
+                            @endif
+                        </div>
                         @if ($image)
-                            <img src="{{ $image->url }}" alt="Herbarium sheet of {{ strip_tags($name) }}, collection {{ $specimen->collection_number }}" data-viewer-image width="600" height="800">
-                        @else
-                            @include('public.partials.collection-image', ['collection' => $specimen, 'imageClass' => 'specimen-card__image'])
+                            <div class="image-controls">
+                                <button class="image-control" type="button" hidden aria-pressed="false" aria-label="Zoom" title="Zoom (click the sheet, then drag to pan)" data-viewer-zoom>@include('public.partials.icon', ['icon' => 'search'])</button>
+                                <button class="image-control" type="button" hidden aria-label="Fullscreen" title="Fullscreen" data-fullscreen>@include('public.partials.icon', ['icon' => 'fullscreen'])</button>
+                                <a class="image-control" href="{{ $image->url }}" download aria-label="Download image" title="Download image" data-viewer-download>@include('public.partials.icon', ['icon' => 'download'])</a>
+                            </div>
+                            <p class="image-hint" aria-hidden="true">Hover to magnify · click to zoom and drag</p>
                         @endif
                     </div>
                     @if ($image)
-                        <div class="image-toolbar">
-                            <button class="button" type="button" hidden aria-pressed="false" data-viewer-zoom>@include('public.partials.icon', ['icon' => 'search']) <span>Zoom</span></button>
-                            <a class="button" href="{{ $image->url }}" download data-viewer-download>@include('public.partials.icon', ['icon' => 'download']) Download image</a>
-                            <button class="button" type="button" hidden data-fullscreen>@include('public.partials.icon', ['icon' => 'fullscreen']) Fullscreen</button>
-                        </div>
                         @if ($images->count() > 1)
                             <ul class="image-thumbs" aria-label="Images of this collection">
                                 @foreach ($images as $thumb)
