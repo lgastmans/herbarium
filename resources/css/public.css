@@ -82,6 +82,7 @@
 .herbarium .filters .search-field input { border: 0; box-shadow: none; padding: 0; background: transparent; }
 .herbarium .filters .search-field input:focus { box-shadow: none; }
 .herbarium .filter-options select,
+.herbarium .filter-options input[type="text"],
 .herbarium .results-toolbar select {
     width: 100%;
     background-color: var(--white);
@@ -93,6 +94,7 @@
 }
 .herbarium .results-toolbar select { width: auto; background-color: transparent; }
 .herbarium .filter-options select:focus,
+.herbarium .filter-options input[type="text"]:focus,
 .herbarium .results-toolbar select:focus { border-color: var(--accent); --tw-ring-color: var(--accent); }
 .herbarium .clear-filters { background: none; border: 0; padding: 4px 0; font-size: 16px; }
 .herbarium .alphabet a { color: var(--text); }
@@ -134,3 +136,22 @@
 .herbarium .related-card .authorship { display: block; }
 .herbarium .record-section h2 { margin-top: 0; }
 .herbarium main { padding-bottom: 64px; }
+
+.herbarium .combobox { position: relative; }
+.herbarium .combobox input[type="text"] { padding-right: 34px; }
+.herbarium .combobox__clear {
+    position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+    width: 26px; height: 26px; border: 0; background: none; color: var(--muted);
+    font-size: 20px; line-height: 1; cursor: pointer; border-radius: 3px;
+}
+.herbarium .combobox__clear:hover { color: var(--accent); }
+.herbarium .combobox__list {
+    position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
+    max-height: 260px; overflow-y: auto; margin: 0; padding: 4px; list-style: none;
+    background: var(--white); border: 1px solid var(--rule); border-radius: 3px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+.herbarium .combobox__list li { padding: 8px 10px; border-radius: 2px; font-size: 16px; color: var(--text); cursor: pointer; }
+.herbarium .combobox__list li.is-active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.herbarium .combobox__list li.is-selected { font-weight: 600; color: var(--accent); }
+[x-cloak] { display: none !important; }

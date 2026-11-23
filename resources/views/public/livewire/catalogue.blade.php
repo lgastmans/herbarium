@@ -35,13 +35,45 @@
                 <details class="filter-group" @if ($this->{$group['model']} !== '') open @endif>
                     <summary>{{ $group['label'] }}</summary>
                     <div class="filter-options">
-                        <label class="sr-only" for="filter-{{ $group['model'] }}">{{ $group['label'] }}</label>
-                        <select id="filter-{{ $group['model'] }}" wire:model.live="{{ $group['model'] }}">
-                            <option value="">All</option>
-                            @foreach ($group['options'] as $value => $label)
-                                <option value="{{ $value }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <div class="combobox" x-data="{
+                                id: $wire.entangle('{{ $group['model'] }}'),
+                                options: @js($group['options']),
+                                text: '',
+                                open: false,
+                                active: 0,
+                                label() { return this.options[this.id] ?? '' },
+                                get matches() {
+                                    const needle = this.text.trim().toLowerCase();
+                                    const all = Object.entries(this.options);
+                                    const shown = this.text === this.label() || needle === '' ? all : all.filter(([, name]) => String(name).toLowerCase().includes(needle));
+                                    return shown.slice(0, 100);
+                                },
+                                choose(key) { this.id = key; this.text = this.label(); this.open = false; },
+                                clear() { this.id = ''; this.text = ''; this.open = false; },
+                                move(step) {
+                                    this.open = true;
+                                    const count = this.matches.length;
+                                    if (count) { this.active = (this.active + step + count) % count; this.$nextTick(() => this.$refs.list.children[this.active]?.scrollIntoView({ block: 'nearest' })); }
+                                },
+                                pick() { const item = this.matches[this.active]; if (this.open && item) { this.choose(item[0]); } },
+                            }" x-init="text = label()" x-effect="if (! open) text = label()"
+                             x-on:click.outside="open = false; text = label()">
+                            <label class="sr-only" for="filter-{{ $group['model'] }}">{{ $group['label'] }}</label>
+                            <input id="filter-{{ $group['model'] }}" type="text" role="combobox" autocomplete="off" aria-autocomplete="list"
+                                   aria-controls="list-{{ $group['model'] }}" x-bind:aria-expanded="open" placeholder="All"
+                                   x-model="text"
+                                   x-on:focus="open = true; $el.select()"
+                                   x-on:input="open = true; active = 0; if (text.trim() === '') { id = ''; }"
+                                   x-on:keydown.down.prevent="move(1)" x-on:keydown.up.prevent="move(-1)"
+                                   x-on:keydown.enter.prevent="pick()" x-on:keydown.escape="open = false; text = label()">
+                            <button type="button" class="combobox__clear" x-show="id !== ''" x-cloak x-on:click="clear()" aria-label="Clear {{ $group['label'] }} filter">&times;</button>
+                            <ul id="list-{{ $group['model'] }}" class="combobox__list" role="listbox" x-ref="list" x-show="open && matches.length" x-cloak>
+                                <template x-for="(item, index) in matches" x-bind:key="item[0]">
+                                    <li role="option" x-bind:aria-selected="item[0] == id" x-bind:class="{ 'is-active': index === active, 'is-selected': item[0] == id }"
+                                        x-text="item[1]" x-on:mousedown.prevent="choose(item[0])" x-on:mousemove="active = index"></li>
+                                </template>
+                            </ul>
+                        </div>
                     </div>
                 </details>
             @endforeach
