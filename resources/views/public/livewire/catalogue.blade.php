@@ -32,11 +32,11 @@
         <section class="filter-section">
             <h3>Filter by</h3>
             @foreach ($groups as $group)
-                <details class="filter-group" @if ($this->{$group['model']} !== '') open @endif>
+                <details class="filter-group" wire:ignore.self @if ($this->{$group['model']} !== '') open @endif>
                     <summary>{{ $group['label'] }}</summary>
                     <div class="filter-options">
-                        <div class="combobox" x-data="{
-                                id: $wire.entangle('{{ $group['model'] }}'),
+                        <div class="combobox" wire:ignore x-data="{
+                                id: $wire.entangle('{{ $group['model'] }}').live,
                                 options: @js($group['options']),
                                 text: '',
                                 open: false,
@@ -49,7 +49,7 @@
                                     return shown.slice(0, 100);
                                 },
                                 choose(key) { this.id = key; this.text = this.label(); this.open = false; },
-                                clear() { this.id = ''; this.text = ''; this.open = false; },
+                                clear() { this.id = ''; this.text = ''; this.active = 0; this.open = true; this.$refs.input.focus(); },
                                 move(step) {
                                     this.open = true;
                                     const count = this.matches.length;
@@ -59,7 +59,7 @@
                             }" x-init="text = label()" x-effect="if (! open) text = label()"
                              x-on:click.outside="open = false; text = label()">
                             <label class="sr-only" for="filter-{{ $group['model'] }}">{{ $group['label'] }}</label>
-                            <input id="filter-{{ $group['model'] }}" type="text" role="combobox" autocomplete="off" aria-autocomplete="list"
+                            <input id="filter-{{ $group['model'] }}" x-ref="input" type="text" role="combobox" autocomplete="off" aria-autocomplete="list"
                                    aria-controls="list-{{ $group['model'] }}" x-bind:aria-expanded="open" placeholder="All"
                                    x-model="text"
                                    x-on:focus="open = true; $el.select()"
