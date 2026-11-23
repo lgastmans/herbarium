@@ -9,6 +9,9 @@ return [
     */
     'public_site_enabled' => (bool) env('PUBLIC_SITE_ENABLED', false),
 
+    // Shown on the Contact page when set; the page omits it otherwise.
+    'contact_email' => env('HERBARIUM_CONTACT_EMAIL'),
+
     'public_site_preview_emails' => array_values(array_filter(array_map(
         static fn (string $email): string => strtolower(trim($email)),
         explode(',', (string) env('PUBLIC_SITE_PREVIEW_EMAILS', '')),

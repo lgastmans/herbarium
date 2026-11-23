@@ -29,13 +29,20 @@ class HomeController extends Controller
         $localities = Place::query()
             ->join('herbarium', 'herbarium.place_id', '=', 'places.id')
             ->whereIn('herbarium.id', Herbarium::firstRecordIds())
-            ->select('places.id', 'places.name')
+            ->selectRaw('places.id, places.name, COUNT(*) as collections_count')
             ->groupBy('places.id', 'places.name')
             ->orderByRaw('COUNT(*) DESC')
             ->orderBy('places.id')
             ->limit(3)
             ->get();
 
-        return view('public.home', compact('featuredCollections', 'localities', 'collectors'));
+        $records = Herbarium::query()->onePerCollection();
+        $stats = [
+            'collections' => (clone $records)->count(),
+            'families' => (clone $records)->whereNotNull('family_id')->distinct()->count('family_id'),
+            'localities' => (clone $records)->whereNotNull('place_id')->distinct()->count('place_id'),
+        ];
+
+        return view('public.home', compact('featuredCollections', 'localities', 'collectors', 'stats'));
     }
 }

@@ -15,7 +15,7 @@
 .herbarium .hero-image { aspect-ratio: 3 / 4; }
 .herbarium .collection-photo { width: 100%; height: 100%; object-fit: contain; }
 .herbarium .specimen-card__name { font-size: 18px; line-height: 1.35; }
-.herbarium .card-metadata { font-size: 14px; gap: 5px; margin-top: 10px; }
+.herbarium .card-metadata { font-size: 16px; gap: 5px; margin-top: 10px; }
 .herbarium .card-metadata > div { display: flex; align-items: flex-start; gap: 8px; }
 .herbarium .card-metadata dt { flex-shrink: 0; }
 .herbarium .card-metadata dd { min-width: 0; overflow-wrap: anywhere; }
@@ -155,3 +155,58 @@
 .herbarium .combobox__list li.is-active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .herbarium .combobox__list li.is-selected { font-weight: 600; color: var(--accent); }
 [x-cloak] { display: none !important; }
+
+/* Home: browse hint, stats strip, locality counts */
+.herbarium .hero-browse { font: 15px/1.5 var(--sans); color: var(--muted); margin-top: 16px; }
+.herbarium .hero-browse a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.herbarium .stats-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-block: 0 12px; border-block: 1px solid var(--rule); }
+.herbarium .stats-strip > div { display: flex; flex-direction: column-reverse; align-items: center; padding: 22px 12px; text-align: center; }
+.herbarium .stats-strip > div + div { border-left: 1px solid var(--rule); }
+.herbarium .stats-strip dd { font-size: clamp(32px, 3.4vw, 48px); line-height: 1.05; color: var(--heading); font-variant-numeric: lining-nums; }
+.herbarium .stats-strip dt { font: 14px/1.4 var(--sans); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; margin-top: 6px; }
+.herbarium .locality-card { transition: border-color .15s; }
+.herbarium .locality-card:hover, .herbarium .locality-card:focus-visible { border-color: var(--accent); }
+.herbarium .locality-card__caption small { display: block; font: 14px/1.4 var(--sans); color: var(--muted); margin-top: 2px; }
+
+/* About and Contact */
+.herbarium .page-hero { background: var(--panel); margin-block: 24px 40px; padding: clamp(32px, 5vw, 72px) clamp(24px, 5vw, 64px); }
+.herbarium .page-hero .eyebrow { font: 14px/1.4 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.herbarium .page-hero h1 { font-size: clamp(38px, 4.6vw, 68px); line-height: 1.04; max-width: 760px; }
+.herbarium .page-hero__lead { font: 19px/1.6 var(--sans); color: #62615b; max-width: 640px; margin-top: 24px; }
+.herbarium .page-hero__meta { font: 14px/1.4 var(--sans); color: var(--muted); margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--rule-accent); display: inline-block; }
+.herbarium .page-section { margin-block: 0 56px; }
+.herbarium .section-intro { font: 17px/1.6 var(--sans); color: #62615b; max-width: 640px; }
+.herbarium .section-note { font: 16px/1.6 var(--sans); color: var(--muted); margin-top: 22px; max-width: 700px; }
+.herbarium .info-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
+.herbarium .info-card { border: 1px solid var(--rule); border-radius: 4px; background: var(--white); padding: 24px; }
+.herbarium .info-card > .icon { width: 36px; height: 40px; color: var(--accent); margin-bottom: 18px; }
+.herbarium .info-card h3 { font-size: 22px; margin-bottom: 8px; }
+.herbarium .info-card p { font: 15px/1.55 var(--sans); color: #62615b; }
+
+.herbarium .contact-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: 32px; margin-bottom: 40px; align-items: start; }
+.herbarium .contact-card { background: var(--white); border: 1px solid var(--rule); border-radius: 4px; padding: 32px; }
+.herbarium .contact-card > .icon { width: 36px; height: 40px; color: var(--accent); margin-bottom: 18px; }
+.herbarium .contact-address { font-style: normal; margin-top: 12px; color: var(--text); line-height: 1.5; }
+.herbarium .contact-email { margin-top: 18px; overflow-wrap: anywhere; }
+.herbarium .contact-main h2 { margin-bottom: 8px; }
+.herbarium .steps { list-style: none; padding: 0; margin: 28px 0 32px; display: grid; gap: 22px; }
+.herbarium .steps li { display: flex; gap: 18px; align-items: flex-start; }
+.herbarium .steps__num { flex: none; width: 36px; height: 36px; border: 1px solid var(--rule-accent); border-radius: 50%; display: grid; place-items: center; color: var(--accent); font-size: 18px; }
+.herbarium .steps h3 { font-size: 21px; margin-bottom: 4px; }
+.herbarium .steps p { font: 15px/1.55 var(--sans); color: #62615b; }
+.herbarium .contact-lookup { max-width: 640px; }
+.herbarium .contact-lookup .search-field input { border: 0; box-shadow: none; padding: 0; }
+@media (max-width: 1199px) {
+    .herbarium .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 899px) {
+    .herbarium .contact-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 599px) {
+    .herbarium .info-grid { grid-template-columns: 1fr; }
+    .herbarium .page-hero__lead { font-size: 17px; }
+    .herbarium .contact-lookup { flex-wrap: wrap; }
+    .herbarium .contact-lookup .search-field { flex-basis: 100%; }
+    .herbarium .stats-strip > div { padding: 16px 4px; }
+    .herbarium .stats-strip dt { font-size: 12px; }
+}

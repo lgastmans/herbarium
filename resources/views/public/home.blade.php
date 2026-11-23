@@ -16,14 +16,24 @@
                     </div>
                     <button class="button button--primary" type="submit">Search</button>
                 </form>
+                <p class="hero-browse">Or browse by
+                    <a href="{{ route('public.explore') }}">species A–Z</a>,
+                    <a href="{{ route('public.explore', ['browse' => 'family']) }}">family</a> or
+                    <a href="{{ route('public.explore') }}#catalogue-search">locality</a>.</p>
             </div>
             <div class="hero-specimen">
                 @include('public.partials.collection-image', ['collection' => $featuredCollections->first(), 'eager' => true, 'imageClass' => 'hero-image'])
             </div>
         </section>
 
+        <dl class="stats-strip" aria-label="The collection at a glance">
+            <div><dt>Collections</dt><dd>{{ number_format($stats['collections']) }}</dd></div>
+            <div><dt>Plant families</dt><dd>{{ number_format($stats['families']) }}</dd></div>
+            <div><dt>Localities</dt><dd>{{ number_format($stats['localities']) }}</dd></div>
+        </dl>
+
         <section class="home-section" aria-labelledby="featured-title">
-            <h2 class="section-title" id="featured-title">From the collection</h2>
+            <div class="section-header"><h2 class="section-title" id="featured-title">From the collection</h2><a class="text-link" href="{{ route('public.explore') }}">Explore all <span class="arrow" aria-hidden="true">→</span></a></div>
             <div class="featured-grid">
                 @forelse ($featuredCollections as $collection)
                     <article class="specimen-card">
@@ -66,7 +76,7 @@
         <p class="localities-intro">Browse specimens by the places where they were collected.</p>
         <div class="locality-grid">
             @foreach ($localities as $locality)
-                <a class="locality-card" href="{{ route('public.explore', ['place' => $locality->id]) }}"><div class="locality-visual" aria-hidden="true">@include('public.partials.icon', ['icon' => 'pin'])</div><div class="locality-card__caption"><span>{{ $locality->name }}</span><span class="arrow" aria-hidden="true">→</span></div></a>
+                <a class="locality-card" href="{{ route('public.explore', ['place' => $locality->id]) }}"><div class="locality-visual" aria-hidden="true">@include('public.partials.icon', ['icon' => 'pin'])</div><div class="locality-card__caption"><span>{{ $locality->name }}<small>{{ number_format($locality->collections_count) }} {{ Str::plural('collection', $locality->collections_count) }}</small></span><span class="arrow" aria-hidden="true">→</span></div></a>
             @endforeach
         </div>
     </section>
