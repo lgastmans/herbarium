@@ -111,7 +111,8 @@
 .herbarium .record-media { min-width: 0; }
 .herbarium .record-content { min-width: 0; }
 .herbarium .image-viewer__stage { max-height: 80vh; }
-.herbarium .image-viewer__stage img { height: auto; }
+.herbarium .image-viewer__stage img { height: auto; width: auto; max-width: 100%; max-height: calc(80vh - 20px); display: block; margin-inline: auto; }
+.herbarium .image-viewer:fullscreen .image-viewer__stage img { max-height: calc(100vh - 120px); }
 .herbarium .image-viewer__stage .specimen-card__image { border: 0; }
 .herbarium .image-viewer:fullscreen { background: var(--paper); display: flex; flex-direction: column; }
 .herbarium .image-viewer:fullscreen .image-viewer__stage { flex: 1; max-height: none; }
@@ -132,3 +133,4 @@
 .herbarium .related-card[aria-current="true"] .related-card__image { border: 2px solid var(--accent); }
 .herbarium .related-card .authorship { display: block; }
 .herbarium .record-section h2 { margin-top: 0; }
+.herbarium main { padding-bottom: 64px; }

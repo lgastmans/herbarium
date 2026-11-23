@@ -33,8 +33,9 @@ class SpecimenController extends Controller
 
         $collectorIds = collect([$specimen->collector1_id, $specimen->collector2_id, $specimen->collector3_id, $specimen->collector4_id])->filter();
         $collectorsById = Collector::query()->whereKey($collectorIds)->get()->keyBy('id');
-        $collectors = $collectorIds->map(fn ($id) => trim((string) $collectorsById->get($id)?->display_collector))
-            ->filter()->unique()->implode('; ');
+        $collectors = $collectorIds->unique()
+            ->mapWithKeys(fn ($id) => [$id => trim((string) $collectorsById->get($id)?->display_collector)])
+            ->filter();
 
         $neighbour = fn () => Herbarium::query()->onePerCollection()
             ->with(['genus', 'images' => fn ($query) => $query->orderBy('id')]);

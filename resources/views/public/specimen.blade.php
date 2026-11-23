@@ -5,6 +5,13 @@
     $image = $images->first();
     $name = $specimen->genus?->name ?: 'Botanical name not recorded';
     $fields = fn (array $rows) => array_filter($rows, fn ($value) => filled($value));
+    // Link to the Explore page with the matching filter applied.
+    $explore = fn (string $filter, $value) => route('public.explore', [$filter => $value]);
+    $year = $specimen->collected_on ? \Carbon\Carbon::parse($specimen->collected_on)->format('Y') : null;
+    $links = [
+        'Place' => $specimen->place_id ? $explore('place', $specimen->place_id) : null,
+        'District' => $specimen->district_id ? $explore('district', $specimen->district_id) : null,
+    ];
 
     $details = $fields([
         'Collection number' => $specimen->collection_number,
@@ -105,13 +112,23 @@
 
                 <dl class="record-summary">
                     @foreach ([
-                        ['leaf', 'Family', $specimen->family?->family],
-                        ['pin', 'Location', $specimen->place?->name],
-                        ['calendar', 'Collected', $dateFormat($specimen->collected_on)],
-                        ['person', 'Collectors', $collectors],
-                    ] as [$icon, $label, $value])
+                        ['leaf', 'Family', $specimen->family?->family, $specimen->family_id ? $explore('family', $specimen->family_id) : null],
+                        ['pin', 'Location', $specimen->place?->name, $links['Place']],
+                        ['calendar', 'Collected', $dateFormat($specimen->collected_on), $year ? $explore('year', $year) : null],
+                        ['person', 'Collectors', $collectors, null],
+                    ] as [$icon, $label, $value, $href])
                         @if (filled($value))
-                            <div class="summary-row">@include('public.partials.icon', ['icon' => $icon])<dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
+                            <div class="summary-row">@include('public.partials.icon', ['icon' => $icon])<dt>{{ $label }}</dt><dd>
+                                @if ($label === 'Collectors')
+                                    @foreach ($value as $id => $collectorName)
+                                        <a class="text-link" href="{{ $explore('collector', $id) }}">{{ $collectorName }}</a>@if (! $loop->last); @endif
+                                    @endforeach
+                                @elseif ($href)
+                                    <a class="text-link" href="{{ $href }}">{{ $value }}</a>
+                                @else
+                                    {{ $value }}
+                                @endif
+                            </dd></div>
                         @endif
                     @endforeach
                 </dl>
@@ -122,7 +139,13 @@
                             <h2 id="section-{{ \Illuminate\Support\Str::slug($title) }}">{{ $title }}</h2>
                             <dl class="record-fields">
                                 @foreach ($rows as $label => $value)
-                                    <dt>{{ $label }}</dt><dd>{!! nl2br(e($value)) !!}</dd>
+                                    <dt>{{ $label }}</dt><dd>
+                                        @if (! empty($links[$label]) && $title === 'Location')
+                                            <a class="text-link" href="{{ $links[$label] }}">{{ $value }}</a>
+                                        @else
+                                            {!! nl2br(e($value)) !!}
+                                        @endif
+                                    </dd>
                                 @endforeach
                             </dl>
                         </section>

@@ -84,6 +84,7 @@
             </div>
         @endif
 
+        @if ($specimens->hasPages() || $specimens->total() > min($perPageOptions))
         <div class="results-toolbar">
             <label for="per-page">Results per page:</label>
             <select id="per-page" wire:model.live="perPage">
@@ -93,5 +94,7 @@
             </select>
         </div>
         <div class="catalogue-pagination">{{ $specimens->links() }}</div>
+    
+        @endif
     </section>
 </div>
