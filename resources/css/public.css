@@ -298,8 +298,8 @@
 /* Specimen: no rule between the summary rows and the first section */
 .herbarium .record-summary { border-bottom: 0; padding-bottom: 20px; }
 
-/* Plant images sit directly on the page: no white panel, no frame.
-   The sheet photos have white paper, so multiply lets the page colour show through. */
+/* Plant images sit directly on the page: the containers have no white panel and no frame.
+   The photos themselves are left untouched. */
 .herbarium .specimen-card__image,
 .herbarium .hero-image,
 .herbarium .related-card__image,
@@ -308,7 +308,7 @@
 .herbarium .collection-photo,
 .herbarium .image-viewer__stage img,
 .herbarium .image-thumbs img,
-.herbarium .related-card img { background: transparent; border: 0; mix-blend-mode: multiply; }
+.herbarium .related-card img { background: transparent; border: 0; }
 .herbarium .image-viewer { border: 0; border-radius: 0; overflow: visible; }
 .herbarium .image-viewer__stage { padding: 0; }
 .herbarium .image-thumbs { border-top: 0; padding-inline: 0; }
