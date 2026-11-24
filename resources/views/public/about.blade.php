@@ -30,7 +30,7 @@
             <p>Three ways into the collection.</p>
             <div class="discovery-grid">
                 <a class="discovery-card" href="{{ route('public.explore') }}">@include('public.partials.icon', ['icon' => 'leaf'])<div><h3>Species A–Z</h3><p>Browse every species</p></div><span class="arrow" aria-hidden="true">→</span></a>
-                <a class="discovery-card" href="{{ route('public.explore', ['browse' => 'family']) }}">@include('public.partials.icon', ['icon' => 'flower'])<div><h3>Plant families</h3><p>Explore by botanical family</p></div><span class="arrow" aria-hidden="true">→</span></a>
+                <a class="discovery-card" href="{{ route('public.explore') }}">@include('public.partials.icon', ['icon' => 'flower'])<div><h3>Plant families</h3><p>Explore by botanical family</p></div><span class="arrow" aria-hidden="true">→</span></a>
                 <a class="discovery-card" href="{{ route('public.contact') }}">@include('public.partials.icon', ['icon' => 'person'])<div><h3>Ask a question</h3><p>Get in touch with the herbarium</p></div><span class="arrow" aria-hidden="true">→</span></a>
             </div>
         </div>

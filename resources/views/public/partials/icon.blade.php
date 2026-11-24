@@ -30,6 +30,9 @@
         @case('arrow-left')
             <path d="M20 12H4m6-6-6 6 6 6"/>
             @break
+        @case('close')
+            <path d="m6 6 12 12M18 6 6 18"/>
+            @break
         @case('plus')
             <path d="M12 5v14M5 12h14"/>
             @break

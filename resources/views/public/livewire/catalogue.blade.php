@@ -1,6 +1,6 @@
 @php
-    $byFamily = $browse === 'family';
     $groups = [
+        ['model' => 'species', 'label' => 'Species', 'options' => []],
         ['model' => 'family', 'label' => 'Family', 'options' => $filters['families']],
         ['model' => 'district', 'label' => 'Region', 'options' => $filters['districts']],
         ['model' => 'place', 'label' => 'Location', 'options' => $filters['places']],
@@ -17,34 +17,72 @@
             <div class="search-field">
                 @include('public.partials.icon', ['icon' => 'search'])
                 <input id="catalogue-search" type="search" wire:model.live.debounce.300ms="search" maxlength="200"
-                       placeholder="Search species, collectors or places">
+                       placeholder="Search collection">
             </div>
         </section>
-
-        <nav class="filter-section" aria-label="Browse by">
-            <h3>Browse by</h3>
-            <div class="browse-options">
-                <a href="{{ route('public.explore') }}" wire:click.prevent="browseBy('species')" @if (! $byFamily) aria-current="true" @endif>By species @include('public.partials.icon', ['icon' => 'chevron-right'])</a>
-                <a href="{{ route('public.explore', ['browse' => 'family']) }}" wire:click.prevent="browseBy('family')" @if ($byFamily) aria-current="true" @endif>By family @include('public.partials.icon', ['icon' => 'chevron-right'])</a>
-            </div>
-        </nav>
 
         <section class="filter-section">
             <h3>Filter by</h3>
             @foreach ($groups as $group)
+                @if ($group['model'] === 'species')
+            <details class="filter-group" wire:ignore.self @if ($species !== '') open @endif>
+                <summary>Species</summary>
+                <div class="filter-options">
+                    <label class="sr-only" for="filter-species">Species</label>
+                    <div class="combobox" wire:ignore x-data="{
+                                id: $wire.entangle('species').live,
+                                label: @js($speciesLabel),
+                                text: @js($speciesLabel),
+                                items: [],
+                                open: false,
+                                active: 0,
+                                timer: null,
+                                search() {
+                                    clearTimeout(this.timer);
+                                    const term = this.text.trim();
+                                    if (term === '') { this.items = []; return; }
+                                    this.timer = setTimeout(async () => { this.items = await $wire.suggestSpecies(term); this.active = 0; }, 200);
+                                },
+                                choose(item) { this.id = item.id; this.label = item.name; this.text = item.name; this.items = []; this.open = false; },
+                                clear() { this.id = ''; this.label = ''; this.text = ''; this.items = []; this.active = 0; this.$refs.input.focus(); },
+                                move(step) {
+                                    const count = this.items.length;
+                                    if (count) { this.open = true; this.active = (this.active + step + count) % count; this.$nextTick(() => this.$refs.list.children[this.active]?.scrollIntoView({ block: 'nearest' })); }
+                                },
+                                pick() { if (this.open && this.items[this.active]) { this.choose(this.items[this.active]); } },
+                            }" x-effect="if (id === '' && label !== '') { label = ''; text = ''; }"
+                             x-on:click.outside="open = false; text = label">
+                            <input id="filter-species" x-ref="input" type="text" role="combobox" autocomplete="off" aria-autocomplete="list"
+                                   aria-controls="list-species" x-bind:aria-expanded="open && items.length > 0" placeholder="Type a species name"
+                                   x-model="text"
+                                   x-on:focus="$el.select()"
+                                   x-on:input="open = true; search(); if (text.trim() === '') { id = ''; label = ''; }"
+                                   x-on:keydown.down.prevent="move(1)" x-on:keydown.up.prevent="move(-1)"
+                                   x-on:keydown.enter.prevent="pick()" x-on:keydown.escape="open = false; text = label">
+                            <button type="button" class="combobox__clear" x-show="id !== '' || text !== ''" x-cloak x-on:click="clear()" aria-label="Clear species filter">&times;</button>
+                            <ul id="list-species" class="combobox__list" role="listbox" x-ref="list" x-show="open && items.length" x-cloak>
+                                <template x-for="(item, index) in items" x-bind:key="item.id">
+                                    <li role="option" x-bind:aria-selected="item.id == id" x-bind:class="{ 'is-active': index === active, 'is-selected': item.id == id }"
+                                        x-text="item.name" x-on:mousedown.prevent="choose(item)" x-on:mousemove="active = index"></li>
+                                </template>
+                            </ul>
+                        </div>
+                </div>
+            </details>
+                @else
                 <details class="filter-group" wire:ignore.self @if ($this->{$group['model']} !== '') open @endif>
                     <summary>{{ $group['label'] }}</summary>
                     <div class="filter-options">
                         <div class="combobox" wire:ignore x-data="{
                                 id: $wire.entangle('{{ $group['model'] }}').live,
-                                options: @js($group['options']),
+                                options: @js(collect($group['options'])->map(fn ($name, $id) => [(string) $id, (string) $name])->values()),
                                 text: '',
                                 open: false,
                                 active: 0,
-                                label() { return this.options[this.id] ?? '' },
+                                label() { return this.options.find(([key]) => key === String(this.id))?.[1] ?? '' },
                                 get matches() {
                                     const needle = this.text.trim().toLowerCase();
-                                    const all = Object.entries(this.options);
+                                    const all = this.options;
                                     const shown = this.text === this.label() || needle === '' ? all : all.filter(([, name]) => String(name).toLowerCase().includes(needle));
                                     return shown.slice(0, 100);
                                 },
@@ -76,6 +114,7 @@
                         </div>
                     </div>
                 </details>
+                @endif
             @endforeach
             @if ($hasFilters)
                 <button type="button" class="text-link clear-filters" wire:click="clearFilters">Clear all filters</button>
@@ -86,7 +125,7 @@
             <h3>A–Z index</h3>
             <div class="alphabet">
                 @foreach (range('A', 'Z') as $letter)
-                    <a href="{{ route('public.explore', array_filter(['browse' => $byFamily ? 'family' : null, 'letter' => $letter])) }}"
+                    <a href="{{ route('public.explore', ['letter' => $letter]) }}"
                        wire:click.prevent="chooseLetter('{{ $letter }}')" @if ($this->letter === $letter) aria-current="true" @endif>{{ $letter }}</a>
                 @endforeach
             </div>

@@ -18,7 +18,7 @@
                 </form>
                 <p class="hero-browse">Or browse by
                     <a href="{{ route('public.explore') }}">species A–Z</a>,
-                    <a href="{{ route('public.explore', ['browse' => 'family']) }}">family</a> or
+                    <a href="{{ route('public.explore') }}">family</a> or
                     <a href="{{ route('public.explore') }}#catalogue-search">locality</a>.</p>
             </div>
             <div class="hero-specimen">
@@ -41,15 +41,18 @@
                             @include('public.partials.collection-image', ['collection' => $collection])
                             <h3 class="specimen-card__name"><span class="sr-only">Collection {{ $collection->collection_number }}: </span><x-public.botanical-name :name="$collection->genus?->name" /></h3>
                         </a>
+                        @php
+                            $collectorIds = collect([$collection->collector1_id, $collection->collector2_id, $collection->collector3_id, $collection->collector4_id])->filter()->unique();
+                            $year = $collection->collected_on ? \Carbon\Carbon::parse($collection->collected_on)->format('Y') : null;
+                        @endphp
                         <dl class="card-metadata">
-                            <div><dt>@include('public.partials.icon', ['icon' => 'leaf'])<span class="sr-only">Family</span></dt><dd>{{ $collection->family?->family ?: 'Not recorded' }}</dd></div>
-                            <div><dt>@include('public.partials.icon', ['icon' => 'pin'])<span class="sr-only">Location</span></dt><dd>{{ $collection->place?->name ?: 'Not recorded' }}</dd></div>
-                            <div><dt>@include('public.partials.icon', ['icon' => 'calendar'])<span class="sr-only">Collected</span></dt><dd>{{ $collection->collected_on ? \Carbon\Carbon::parse($collection->collected_on)->format('d M Y') : 'Not recorded' }}</dd></div>
-                            @php
-                                $collectorNames = collect([$collection->collector1_id, $collection->collector2_id, $collection->collector3_id, $collection->collector4_id])
-                                    ->filter()->unique()->map(fn ($id) => $collectors->get($id)?->display_collector)->filter()->implode('; ');
-                            @endphp
-                            <div><dt>@include('public.partials.icon', ['icon' => 'person'])<span class="sr-only">Collectors</span></dt><dd>{{ $collectorNames ?: 'Not recorded' }}</dd></div>
+                            <div><dt>@include('public.partials.icon', ['icon' => 'leaf'])<span class="sr-only">Family</span></dt><dd>@if ($collection->family?->family)<a href="{{ route('public.explore', ['family' => $collection->family_id]) }}">{{ $collection->family->family }}</a>@else Not recorded @endif</dd></div>
+                            <div><dt>@include('public.partials.icon', ['icon' => 'pin'])<span class="sr-only">Location</span></dt><dd>@if ($collection->place?->name)<a href="{{ route('public.explore', ['place' => $collection->place_id]) }}">{{ $collection->place->name }}</a>@else Not recorded @endif</dd></div>
+                            <div><dt>@include('public.partials.icon', ['icon' => 'calendar'])<span class="sr-only">Collected</span></dt><dd>@if ($year)<a href="{{ route('public.explore', ['year' => $year]) }}">{{ \Carbon\Carbon::parse($collection->collected_on)->format('d M Y') }}</a>@else Not recorded @endif</dd></div>
+                            <div><dt>@include('public.partials.icon', ['icon' => 'person'])<span class="sr-only">Collectors</span></dt><dd>
+                                @php $linked = $collectorIds->filter(fn ($id) => filled($collectors->get($id)?->display_collector)); @endphp
+                                @forelse ($linked as $id)<a href="{{ route('public.explore', ['collector' => $id]) }}">{{ $collectors->get($id)->display_collector }}</a>@if (! $loop->last); @endif @empty Not recorded @endforelse
+                            </dd></div>
                         </dl>
                     </article>
                 @empty
@@ -65,7 +68,7 @@
             <p>Explore preserved specimens alongside their collection dates, localities and collectors.<br>Each record brings the specimen sheet and its field information together.</p>
             <div class="discovery-grid">
                 <a class="discovery-card" href="{{ route('public.explore') }}">@include('public.partials.icon', ['icon' => 'leaf'])<div><h3>Species A–Z</h3><p>Browse all species<br>in the collection</p></div><span class="arrow" aria-hidden="true">→</span></a>
-                <a class="discovery-card" href="{{ route('public.explore', ['browse' => 'family']) }}">@include('public.partials.icon', ['icon' => 'flower'])<div><h3>Plant families</h3><p>Explore by botanical<br>family</p></div><span class="arrow" aria-hidden="true">→</span></a>
+                <a class="discovery-card" href="{{ route('public.explore') }}">@include('public.partials.icon', ['icon' => 'flower'])<div><h3>Plant families</h3><p>Explore by botanical<br>family</p></div><span class="arrow" aria-hidden="true">→</span></a>
                 <a class="discovery-card" href="{{ route('public.explore') }}#catalogue-search">@include('public.partials.icon', ['icon' => 'pin'])<div><h3>Collection localities</h3><p>View specimens by<br>place of collection</p></div><span class="arrow" aria-hidden="true">→</span></a>
             </div>
         </div>

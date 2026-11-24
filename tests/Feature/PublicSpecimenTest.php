@@ -48,7 +48,7 @@ class PublicSpecimenTest extends TestCase
             ->set('search', '100%')->assertSee('No collections found');
     }
 
-    public function test_filters_letter_index_and_browse_order(): void
+    public function test_filters_and_letter_index(): void
     {
         $acanthaceae = Family::create(['family' => 'Acanthaceae']);
         $boraginaceae = Family::create(['family' => 'Boraginaceae']);
@@ -57,18 +57,30 @@ class PublicSpecimenTest extends TestCase
 
         Livewire::test(Catalogue::class)
             ->assertSeeInOrder(['Alpha first', 'Zeta last'])
-            ->call('browseBy', 'family')->assertSeeInOrder(['Zeta last', 'Alpha first'])
             ->set('family', (string) $boraginaceae->id)->assertSee('Alpha first')->assertDontSee('Zeta last')
             ->call('clearFilters')->set('year', '2002')->assertSee('Zeta last')->assertDontSee('Alpha first')
-            ->call('clearFilters')->call('browseBy', 'species')->call('chooseLetter', 'A')->assertSee('Alpha first')->assertDontSee('Zeta last')
+            ->call('clearFilters')->call('chooseLetter', 'A')->assertSee('Alpha first')->assertDontSee('Zeta last')
             ->call('chooseLetter', 'A')->assertSee('Zeta last');
+    }
+
+    public function test_species_filter_suggests_names_and_narrows_results(): void
+    {
+        $alpha = $this->collection('1', 'Alpha first L.');
+        $this->collection('2', 'Zeta last L.');
+        Genus::create(['name' => 'Alphabet unused L.']);
+
+        Livewire::test(Catalogue::class)
+            ->call('suggestSpecies', 'alp')->assertReturned([['id' => (string) $alpha->genus_id, 'name' => 'Alpha first L.']])
+            ->call('suggestSpecies', '')->assertReturned([])
+            ->set('species', (string) $alpha->genus_id)->assertSee('Alpha first')->assertDontSee('Zeta last')
+            ->call('clearFilters')->assertSee('Zeta last');
     }
 
     public function test_unexpected_url_values_fall_back_to_safe_defaults(): void
     {
         $this->collection('1', 'Alpha first L.');
 
-        Livewire::withQueryParams(['perPage' => '9999', 'browse' => 'nonsense', 'letter' => "'; --", 'year' => 'abc', 'family' => 'x'])
+        Livewire::withQueryParams(['perPage' => '9999', 'species' => 'x', 'letter' => "'; --", 'year' => 'abc', 'family' => 'x'])
             ->test(Catalogue::class)
             ->assertOk()->assertSee('Alpha first')
             ->assertViewHas('specimens', fn ($page) => $page->perPage() === 24);

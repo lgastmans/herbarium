@@ -157,3 +157,35 @@ document.querySelectorAll('[data-image-viewer]').forEach((viewer) => {
         });
     });
 });
+
+// Header search: the magnifier opens a search bar over the navigation. Without
+// JavaScript it stays a plain link to the Explore search.
+const searchToggle = document.querySelector('[data-search-toggle]');
+const searchPanel = document.getElementById('header-search');
+
+if (searchToggle && searchPanel) {
+    const input = searchPanel.querySelector('input');
+    searchToggle.setAttribute('role', 'button');
+    searchToggle.setAttribute('aria-expanded', 'false');
+
+    const setOpen = (open) => {
+        searchPanel.hidden = ! open;
+        searchToggle.setAttribute('aria-expanded', String(open));
+        if (open) {
+            input.focus();
+        } else if (searchPanel.contains(document.activeElement)) {
+            searchToggle.focus();
+        }
+    };
+
+    searchToggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        setOpen(searchPanel.hidden);
+    });
+    searchPanel.querySelector('[data-search-close]').addEventListener('click', () => setOpen(false));
+    searchPanel.addEventListener('keydown', (event) => { if (event.key === 'Escape') setOpen(false); });
+    searchPanel.addEventListener('submit', (event) => {
+        // Nothing typed: stay put rather than load an unfiltered Explore page.
+        if (input.value.trim() === '') { event.preventDefault(); input.focus(); }
+    });
+}

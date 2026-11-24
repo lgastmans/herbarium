@@ -5,10 +5,12 @@ namespace App\Livewire\PublicSite;
 use App\Models\Collector;
 use App\Models\District;
 use App\Models\Family;
+use App\Models\Genus;
 use App\Models\Herbarium;
 use App\Models\Place;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
+use Livewire\Attributes\Renderless;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,9 +24,9 @@ class Catalogue extends Component
     #[Url(except: '')]
     public string $search = '';
 
-    /** "species" orders by botanical name, "family" by plant family. */
-    #[Url(except: 'species')]
-    public string $browse = 'species';
+    /** Id of the chosen species (a genus table row, which holds the full botanical name). */
+    #[Url(except: '')]
+    public string $species = '';
 
     #[Url(except: '')]
     public string $family = '';
@@ -57,11 +59,26 @@ class Catalogue extends Component
         $this->resetPage();
     }
 
-    public function browseBy(string $browse): void
+    /** Autocomplete for the species filter: names that start with or contain the typed text. */
+    #[Renderless]
+    public function suggestSpecies(string $term): array
     {
-        $this->browse = $browse;
-        $this->letter = '';
-        $this->resetPage();
+        $term = mb_substr(trim($term), 0, 100);
+        if ($term === '') {
+            return [];
+        }
+
+        $escaped = addcslashes($term, '%_\\');
+
+        return Genus::query()
+            ->whereIn('id', Herbarium::query()->whereNotNull('genus_id')->select('genus_id'))
+            ->where('name', 'like', '%'.$escaped.'%')
+            ->orderByRaw('name like ? desc', [$escaped.'%'])
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id', 'name'])
+            ->map(fn (Genus $genus) => ['id' => (string) $genus->id, 'name' => $genus->name])
+            ->all();
     }
 
     public function chooseLetter(string $letter): void
@@ -72,13 +89,12 @@ class Catalogue extends Component
 
     public function clearFilters(): void
     {
-        $this->reset('search', 'family', 'district', 'place', 'collector', 'year', 'letter');
+        $this->reset('search', 'species', 'family', 'district', 'place', 'collector', 'year', 'letter');
         $this->resetPage();
     }
 
     public function render(): View
     {
-        $byFamily = $this->browse === 'family';
         $perPage = in_array((int) $this->perPage, self::PER_PAGE_OPTIONS, true) ? (int) $this->perPage : 24;
 
         $specimens = Herbarium::query()
@@ -88,6 +104,7 @@ class Catalogue extends Component
             ->leftJoin('families', 'families.id', '=', 'herbarium.family_id')
             ->with(['genus', 'family', 'images' => fn ($query) => $query->orderBy('id')])
             ->tap(fn (Builder $query) => $this->applySearch($query))
+            ->when(ctype_digit($this->species), fn ($query) => $query->where('herbarium.genus_id', $this->species))
             ->when(ctype_digit($this->family), fn ($query) => $query->where('herbarium.family_id', $this->family))
             ->when(ctype_digit($this->district), fn ($query) => $query->where('herbarium.district_id', $this->district))
             ->when(ctype_digit($this->place), fn ($query) => $query->where('herbarium.place_id', $this->place))
@@ -99,10 +116,7 @@ class Catalogue extends Component
             ->when(preg_match('/^\d{4}$/', $this->year), fn ($query) => $query->whereBetween(
                 'herbarium.collected_on', [$this->year.'-01-01', $this->year.'-12-31']
             ))
-            ->when(preg_match('/^[A-Z]$/', $this->letter), fn ($query) => $query->where(
-                $byFamily ? 'families.family' : 'genus.name', 'like', $this->letter.'%'
-            ))
-            ->when($byFamily, fn ($query) => $query->orderBy('families.family'))
+            ->when(preg_match('/^[A-Z]$/', $this->letter), fn ($query) => $query->where('genus.name', 'like', $this->letter.'%'))
             ->orderBy('genus.name')
             ->orderBy('herbarium.id')
             ->paginate($perPage);
@@ -111,7 +125,8 @@ class Catalogue extends Component
             'specimens' => $specimens,
             'perPageOptions' => self::PER_PAGE_OPTIONS,
             'filters' => $this->filterOptions(),
-            'hasFilters' => collect([$this->search, $this->family, $this->district, $this->place, $this->collector, $this->year, $this->letter])
+            'speciesLabel' => ctype_digit($this->species) ? (string) Genus::query()->whereKey($this->species)->value('name') : '',
+            'hasFilters' => collect([$this->search, $this->species, $this->family, $this->district, $this->place, $this->collector, $this->year, $this->letter])
                 ->contains(fn ($value) => $value !== ''),
         ]);
     }
@@ -156,8 +171,9 @@ class Catalogue extends Component
             'families' => Family::query()->whereIn('id', $used('family_id'))->orderBy('family')->pluck('family', 'id'),
             'districts' => District::query()->whereIn('id', $used('district_id'))->orderBy('name')->pluck('name', 'id'),
             'places' => Place::query()->whereIn('id', $used('place_id'))->orderBy('name')->pluck('name', 'id'),
-            'collectors' => Collector::query()->whereKey($collectorIds)->orderBy('surname')->orderBy('name')->get()
-                ->mapWithKeys(fn (Collector $collector) => [$collector->id => trim($collector->display_collector)]),
+            'collectors' => Collector::query()->whereKey($collectorIds)->get()
+                ->mapWithKeys(fn (Collector $collector) => [$collector->id => trim($collector->display_collector)])
+                ->sortBy(fn (string $name) => mb_strtolower($name)),
             'years' => $used('collected_on')->pluck('collected_on')
                 ->map(fn ($date) => substr((string) $date, 0, 4))->unique()->sortDesc()
                 ->mapWithKeys(fn ($year) => [$year => $year]),

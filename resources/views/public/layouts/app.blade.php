@@ -16,6 +16,7 @@
     <a class="skip-link" href="#main-content">Skip to content</a>
     @include('public.partials.header')
     <main id="main-content" tabindex="-1">@yield('content')</main>
+    @include('public.partials.footer')
     @livewireScripts
 </body>
 </html>
